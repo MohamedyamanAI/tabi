@@ -43,6 +43,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property Collection<int, User> $realUsers
  * @property-read Collection<int, OrganizationInvitation> $teamInvitations
  * @property Member $membership
+ * @property bool $screenshots_enabled
+ * @property int $screenshot_interval_minutes
  * @property NumberFormat $number_format
  * @property CurrencyFormat $currency_format
  * @property DateFormat $date_format
@@ -73,6 +75,8 @@ class Organization extends JetstreamTeam implements AuditableContract
         'employees_can_see_billable_rates' => 'boolean',
         'employees_can_manage_tasks' => 'boolean',
         'prevent_overlapping_time_entries' => 'boolean',
+        'screenshots_enabled' => 'boolean',
+        'screenshot_interval_minutes' => 'integer',
         'number_format' => NumberFormat::class,
         'currency_format' => CurrencyFormat::class,
         'date_format' => DateFormat::class,

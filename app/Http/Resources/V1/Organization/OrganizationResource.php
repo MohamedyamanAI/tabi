@@ -71,6 +71,10 @@ class OrganizationResource extends BaseResource
             'interval_format' => $this->resource->interval_format->value,
             /** @var TimeFormat $time_format Time format */
             'time_format' => $this->resource->time_format->value,
+            /** @var bool $screenshots_enabled Whether screenshots are enabled */
+            'screenshots_enabled' => $this->resource->screenshots_enabled,
+            /** @var int $screenshot_interval_minutes Screenshot interval in minutes */
+            'screenshot_interval_minutes' => $this->resource->screenshot_interval_minutes,
         ];
     }
 }

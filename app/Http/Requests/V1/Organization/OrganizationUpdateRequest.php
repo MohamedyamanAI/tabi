@@ -45,6 +45,14 @@ class OrganizationUpdateRequest extends BaseFormRequest
             'prevent_overlapping_time_entries' => [
                 'boolean',
             ],
+            'screenshots_enabled' => [
+                'boolean',
+            ],
+            'screenshot_interval_minutes' => [
+                'integer',
+                'min:1',
+                'max:60',
+            ],
             'number_format' => [
                 Rule::enum(NumberFormat::class),
             ],
@@ -113,5 +121,15 @@ class OrganizationUpdateRequest extends BaseFormRequest
     public function getPreventOverlappingTimeEntries(): ?bool
     {
         return $this->has('prevent_overlapping_time_entries') ? $this->boolean('prevent_overlapping_time_entries') : null;
+    }
+
+    public function getScreenshotsEnabled(): ?bool
+    {
+        return $this->has('screenshots_enabled') ? $this->boolean('screenshots_enabled') : null;
+    }
+
+    public function getScreenshotIntervalMinutes(): ?int
+    {
+        return $this->has('screenshot_interval_minutes') ? (int) $this->input('screenshot_interval_minutes') : null;
     }
 }

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Carbon;
 use Korridor\LaravelComputedAttributes\ComputedAttributes;
@@ -46,6 +47,7 @@ use Staudenmeir\EloquentJsonRelations\Relations\BelongsToJson;
  * @property string|null $task_id
  * @property-read Task|null $task
  * @property-read Collection<int, Tag> $tagsRelation
+ * @property-read Collection<int, Screenshot> $screenshots
  *
  * @method Builder<TimeEntry> hasTag(Tag $tag)
  * @method static TimeEntryFactory factory()
@@ -221,6 +223,14 @@ class TimeEntry extends Model implements AuditableContract
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class, 'client_id');
+    }
+
+    /**
+     * @return HasMany<Screenshot, $this>
+     */
+    public function screenshots(): HasMany
+    {
+        return $this->hasMany(Screenshot::class, 'time_entry_id');
     }
 
     /**

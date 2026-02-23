@@ -8,6 +8,7 @@ import {
     ChartBarIcon,
     ClockIcon,
     Cog6ToothIcon,
+    CameraIcon,
     CreditCardIcon,
     FolderIcon,
     HomeIcon,
@@ -34,6 +35,7 @@ import {
     canViewMembers,
     canViewProjects,
     canViewReport,
+    canViewScreenshots,
     canViewTags,
 } from '@/utils/permissions';
 import { isBillingActivated, isInvoicingActivated } from '@/utils/billing';
@@ -237,6 +239,12 @@ const page = usePage<{
                                 :icon="UserGroupIcon"
                                 :current="route().current('members')"
                                 :href="route('members')"></NavigationSidebarItem>
+                            <NavigationSidebarItem
+                                v-if="canViewScreenshots()"
+                                title="Screenshots"
+                                :icon="CameraIcon"
+                                :current="route().current('screenshots')"
+                                :href="route('screenshots')"></NavigationSidebarItem>
                             <NavigationSidebarItem
                                 v-if="canViewTags()"
                                 title="Tags"

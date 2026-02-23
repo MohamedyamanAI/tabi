@@ -144,6 +144,11 @@ class JetstreamServiceProvider extends ServiceProvider
             'invoices:delete',
             'invoice-settings:view',
             'invoice-settings:update',
+            'screenshots:view:own',
+            'screenshots:view:all',
+            'screenshots:upload',
+            'screenshots:delete:own',
+            'screenshots:delete:all',
         ])->description('Owner users can perform any action. There is only one owner per organization.');
 
         Jetstream::role(Role::Admin->value, 'Administrator', [
@@ -208,6 +213,11 @@ class JetstreamServiceProvider extends ServiceProvider
             'invoices:delete',
             'invoice-settings:view',
             'invoice-settings:update',
+            'screenshots:view:own',
+            'screenshots:view:all',
+            'screenshots:upload',
+            'screenshots:delete:own',
+            'screenshots:delete:all',
         ])->description('Administrator users can perform any action, except accessing the billing dashboard.');
 
         Jetstream::role(Role::Manager->value, 'Manager', [
@@ -261,6 +271,11 @@ class JetstreamServiceProvider extends ServiceProvider
             'invoices:delete',
             'invoice-settings:view',
             'invoice-settings:update',
+            'screenshots:view:own',
+            'screenshots:view:all',
+            'screenshots:upload',
+            'screenshots:delete:own',
+            'screenshots:delete:all',
         ])->description('Managers have full access to all projects, time entries, ect. but cannot manage the organization (add/remove member, edit the organization, ect.).');
 
         Jetstream::role(Role::Employee->value, 'Employee', [
@@ -274,6 +289,9 @@ class JetstreamServiceProvider extends ServiceProvider
             'time-entries:update:own',
             'time-entries:delete:own',
             'organizations:view',
+            'screenshots:view:own',
+            'screenshots:upload',
+            'screenshots:delete:own',
         ])->description('Employees have the ability to read, create, and update their own time entries, they can see the projects that they are members of and the clients they are assigned to.');
 
         Jetstream::role(Role::Placeholder->value, 'Placeholder', [
