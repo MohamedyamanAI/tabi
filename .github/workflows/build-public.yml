@@ -18,7 +18,7 @@ permissions:
   id-token: write
 
 env:
-  GHCR_REPO: ghcr.io/MohamedyamanAI/tabi
+  GHCR_REPO: ghcr.io/mohamedyamanai/tabi
 
 name: Build - Public
 jobs:
