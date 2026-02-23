@@ -50,7 +50,7 @@ class OrganizationUpdateRequest extends BaseFormRequest
             ],
             'screenshot_interval_minutes' => [
                 'integer',
-                'min:1',
+                'min:3',
                 'max:60',
             ],
             'screenshots_blurred' => [
