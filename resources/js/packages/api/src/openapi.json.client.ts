@@ -327,6 +327,7 @@ const OrganizationResource = z
         time_format: TimeFormat,
         screenshots_enabled: z.boolean(),
         screenshot_interval_minutes: z.number().int(),
+        screenshots_blurred: z.boolean(),
     })
     .passthrough();
 const OrganizationUpdateRequest = z
@@ -343,6 +344,7 @@ const OrganizationUpdateRequest = z
         time_format: TimeFormat,
         screenshots_enabled: z.boolean(),
         screenshot_interval_minutes: z.number().int().gte(1).lte(60),
+        screenshots_blurred: z.boolean(),
     })
     .partial()
     .passthrough();

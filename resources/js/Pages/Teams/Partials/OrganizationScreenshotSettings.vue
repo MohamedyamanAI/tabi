@@ -18,14 +18,17 @@ const queryClient = useQueryClient();
 const form = ref<{
     screenshots_enabled: boolean;
     screenshot_interval_minutes: number;
+    screenshots_blurred: boolean;
 }>({
     screenshots_enabled: false,
     screenshot_interval_minutes: 5,
+    screenshots_blurred: true,
 });
 
 onMounted(async () => {
     form.value.screenshots_enabled = organization.value?.screenshots_enabled ?? false;
     form.value.screenshot_interval_minutes = organization.value?.screenshot_interval_minutes ?? 5;
+    form.value.screenshots_blurred = organization.value?.screenshots_blurred ?? true;
 });
 
 const mutation = useMutation({
@@ -39,6 +42,7 @@ async function submit() {
     await mutation.mutateAsync({
         screenshots_enabled: form.value.screenshots_enabled,
         screenshot_interval_minutes: form.value.screenshot_interval_minutes,
+        screenshots_blurred: form.value.screenshots_blurred,
     });
 }
 </script>
@@ -70,6 +74,19 @@ async function submit() {
                         min="1"
                         max="60"
                         class="w-24" />
+                </Field>
+                <Field v-if="form.screenshots_enabled" orientation="horizontal">
+                    <Checkbox
+                        id="screenshotsBlurred"
+                        v-model:checked="form.screenshots_blurred" />
+                    <div>
+                        <FieldLabel for="screenshotsBlurred">Blur screenshots</FieldLabel>
+                        <p class="text-xs text-muted">
+                            When enabled, screenshots are pixelated to protect
+                            privacy while still showing general activity. When
+                            disabled, screenshots are captured at full clarity.
+                        </p>
+                    </div>
                 </Field>
             </div>
         </template>
