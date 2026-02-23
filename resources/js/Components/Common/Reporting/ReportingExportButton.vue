@@ -49,7 +49,7 @@ function triggerDownload(format: ExportFormat) {
         </DropdownMenuContent>
     </DropdownMenu>
     <UpgradeModal v-model:show="showPremiumModal">
-        <strong>PDF Reports</strong> are only available in solidtime Professional.
+        <strong>PDF Reports</strong> are only available in Tabi Pro.
     </UpgradeModal>
 </template>
 

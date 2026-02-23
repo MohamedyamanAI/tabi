@@ -37,12 +37,6 @@ const show = defineModel('show', { default: false });
                         <strong class="font-semibold text-text-primary"
                             >request a free trial</strong
                         >
-                        via
-                        <a
-                            class="text-accent-200/80 transition text-accent-300"
-                            href="mailto:hello@solidtime.io"
-                            >hello@solidtime.io</a
-                        >
                         to try out this feature.
                     </p>
 

@@ -18,7 +18,7 @@ const preferredColor = usePreferredColorScheme();
     <FormSection>
         <template #title> Theme</template>
 
-        <template #description> Choose how you want solidtime to look on your device </template>
+        <template #description> Choose how you want Tabi to look on your device </template>
 
         <template #form>
             <Field class="col-span-6 sm:col-span-4">

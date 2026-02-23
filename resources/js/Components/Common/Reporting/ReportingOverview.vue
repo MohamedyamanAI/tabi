@@ -290,7 +290,7 @@ const tableData = computed(() => {
         v-model:show="showCreateReportModal"
         :properties="reportProperties"></ReportCreateModal>
     <UpgradeModal v-model:show="showPremiumModal">
-        This feature is only available in solidtime Professional.
+        This feature is only available in Tabi Pro.
     </UpgradeModal>
     <MainContainer
         class="h-14 sm:h-16 border-b border-default-background-separator flex flex-wrap gap-y-3 justify-between items-center">

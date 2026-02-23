@@ -31,7 +31,7 @@ function onSaveReportClick() {
         v-model:show="showCreateReportModal"
         :properties="reportProperties"></ReportCreateModal>
     <UpgradeModal v-model:show="showPremiumModal">
-        <strong>Sharable Reports</strong> is only available in solidtime Professional.
+        <strong>Sharable Reports</strong> is only available in Tabi Pro.
     </UpgradeModal>
     <SecondaryButton v-if="canCreateReports()" :icon="SaveIcon" @click="onSaveReportClick"
         >Save Report</SecondaryButton

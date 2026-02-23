@@ -6,15 +6,17 @@ namespace App\Http\Controllers\Web;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class HomeController extends Controller
 {
-    public function index(): RedirectResponse
+    public function index(): RedirectResponse|Response
     {
         if (Auth::check()) {
             return redirect()->route('dashboard');
-        } else {
-            return redirect('login');
         }
+
+        return Inertia::render('Landing');
     }
 }

@@ -86,7 +86,7 @@ const showBlackFridayBanner = computed(() => {
                     <span class="font-medium">
                         <strong>BLACK FRIDAY SALE!</strong> Use the code
                         <strong>BLACKFRIDAY</strong> at checkout and get
-                        <strong>30% off</strong> the solidtime yearly plan.
+                        <strong>30% off</strong> the Tabi yearly plan.
                     </span>
                 </div>
             </div>
@@ -114,7 +114,7 @@ const showBlackFridayBanner = computed(() => {
                         Your trial expires in {{ daysLeftInTrial() }} days.
                     </span>
                     <span class="hidden md:inline">
-                        To continue using all features & support the development of solidtime,
+                        To continue using all features & support the development of Tabi,
                         please upgrade your plan.
                     </span>
                 </div>
@@ -168,7 +168,7 @@ const showBlackFridayBanner = computed(() => {
                 <div class="flex-1 space-x-1">
                     <span class="font-medium"> You are currently using the Free Plan. </span>
                     <span class="hidden md:inline">
-                        To unlock all premium features & support the development of solidtime,
+                        To unlock all premium features & support the development of Tabi,
                         please upgrade your plan.</span
                     >
                 </div>
