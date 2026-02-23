@@ -18,8 +18,7 @@ permissions:
   id-token: write
 
 env:
-  DOCKERHUB_REPO: solidtime/solidtime
-  GHCR_REPO: ghcr.io/solidtime-io/solidtime
+  GHCR_REPO: ghcr.io/MohamedyamanAI/tabi
 
 name: Build - Public
 jobs:
