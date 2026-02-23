@@ -103,10 +103,12 @@ const deleteMutation = useMutation({
                 headers: {
                     Accept: 'application/json',
                     'X-XSRF-TOKEN':
-                        document.cookie
-                            .split('; ')
-                            .find((row) => row.startsWith('XSRF-TOKEN='))
-                            ?.split('=')[1] ?? '',
+                        decodeURIComponent(
+                            document.cookie
+                                .split('; ')
+                                .find((row) => row.startsWith('XSRF-TOKEN='))
+                                ?.split('=')[1] ?? ''
+                        ),
                 },
             }
         );
