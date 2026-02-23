@@ -5,7 +5,7 @@ import { useStorage } from '@vueuse/core';
 const showReleaseInfo = useStorage('showReleaseInfo-desktop', true);
 
 function openDesktopGithubRepo() {
-    window.open('https://github.com/solidtime-io/solidtime-desktop', '_blank')?.focus();
+    window.open('https://github.com/MohamedyamanAI/tabi-desktop', '_blank')?.focus();
 }
 </script>
 
@@ -26,7 +26,7 @@ function openDesktopGithubRepo() {
             </div>
 
             <p class="text-xs">
-                <span class="font-semibold">Solidtime Desktop Beta</span> is here! Test our brand
+                <span class="font-semibold">Tabi Desktop</span> is here! Test our brand
                 new clients for Windows, macOS and Linux now.
             </p>
             <SecondaryButton

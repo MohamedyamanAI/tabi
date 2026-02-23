@@ -260,7 +260,7 @@ async function downloadExport(format: ExportFormat) {
             v-model:show="showExportModal"
             :export-url="exportUrl"></ReportingExportModal>
         <UpgradeModal v-model:show="showPremiumModal">
-            <strong>PDF Reports</strong> are only available in solidtime Professional.
+            <strong>PDF Reports</strong> are only available in Tabi Pro.
         </UpgradeModal>
         <MainContainer
             class="h-14 sm:h-16 border-b border-default-background-separator flex flex-wrap gap-y-3 justify-between items-center">
