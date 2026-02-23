@@ -71,7 +71,7 @@ async function submit() {
                         id="screenshotIntervalMinutes"
                         v-model="form.screenshot_interval_minutes"
                         type="number"
-                        min="1"
+                        min="3"
                         max="60"
                         class="w-24" />
                 </Field>

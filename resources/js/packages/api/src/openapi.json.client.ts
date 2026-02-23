@@ -345,7 +345,7 @@ const OrganizationUpdateRequest = z
         interval_format: IntervalFormat,
         time_format: TimeFormat,
         screenshots_enabled: z.boolean(),
-        screenshot_interval_minutes: z.number().int().gte(1).lte(60),
+        screenshot_interval_minutes: z.number().int().gte(3).lte(60),
         screenshots_blurred: z.boolean(),
         idle_detection_enabled: z.boolean(),
         idle_threshold_minutes: z.number().int().gte(1).lte(60),
