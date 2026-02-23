@@ -45,6 +45,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property Member $membership
  * @property bool $screenshots_enabled
  * @property int $screenshot_interval_minutes
+ * @property bool $screenshots_blurred
  * @property NumberFormat $number_format
  * @property CurrencyFormat $currency_format
  * @property DateFormat $date_format
@@ -77,6 +78,7 @@ class Organization extends JetstreamTeam implements AuditableContract
         'prevent_overlapping_time_entries' => 'boolean',
         'screenshots_enabled' => 'boolean',
         'screenshot_interval_minutes' => 'integer',
+        'screenshots_blurred' => 'boolean',
         'number_format' => NumberFormat::class,
         'currency_format' => CurrencyFormat::class,
         'date_format' => DateFormat::class,

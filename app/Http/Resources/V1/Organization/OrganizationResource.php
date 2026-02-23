@@ -75,6 +75,8 @@ class OrganizationResource extends BaseResource
             'screenshots_enabled' => $this->resource->screenshots_enabled,
             /** @var int $screenshot_interval_minutes Screenshot interval in minutes */
             'screenshot_interval_minutes' => $this->resource->screenshot_interval_minutes,
+            /** @var bool $screenshots_blurred Whether screenshots should be blurred */
+            'screenshots_blurred' => $this->resource->screenshots_blurred,
         ];
     }
 }

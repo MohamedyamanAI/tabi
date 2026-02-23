@@ -204,7 +204,7 @@ function executeDelete() {
         </div>
 
         <!-- Enlarged view modal -->
-        <DialogModal :show="!!selectedScreenshot" @close="selectedScreenshot = null">
+        <DialogModal :show="!!selectedScreenshot" max-width="5xl" @close="selectedScreenshot = null">
             <template #title>
                 <div class="flex items-center justify-between w-full">
                     <span>

@@ -53,6 +53,9 @@ class OrganizationUpdateRequest extends BaseFormRequest
                 'min:1',
                 'max:60',
             ],
+            'screenshots_blurred' => [
+                'boolean',
+            ],
             'number_format' => [
                 Rule::enum(NumberFormat::class),
             ],
@@ -131,5 +134,10 @@ class OrganizationUpdateRequest extends BaseFormRequest
     public function getScreenshotIntervalMinutes(): ?int
     {
         return $this->has('screenshot_interval_minutes') ? (int) $this->input('screenshot_interval_minutes') : null;
+    }
+
+    public function getScreenshotsBlurred(): ?bool
+    {
+        return $this->has('screenshots_blurred') ? $this->boolean('screenshots_blurred') : null;
     }
 }

@@ -73,6 +73,9 @@ class OrganizationController extends Controller
         if ($request->getScreenshotIntervalMinutes() !== null) {
             $organization->screenshot_interval_minutes = $request->getScreenshotIntervalMinutes();
         }
+        if ($request->getScreenshotsBlurred() !== null) {
+            $organization->screenshots_blurred = $request->getScreenshotsBlurred();
+        }
         $hasBillableRate = $request->has('billable_rate');
         if ($hasBillableRate) {
             $oldBillableRate = $organization->billable_rate;
