@@ -77,6 +77,10 @@ class OrganizationResource extends BaseResource
             'screenshot_interval_minutes' => $this->resource->screenshot_interval_minutes,
             /** @var bool $screenshots_blurred Whether screenshots should be blurred */
             'screenshots_blurred' => $this->resource->screenshots_blurred,
+            /** @var bool $idle_detection_enabled Whether idle detection is enabled */
+            'idle_detection_enabled' => $this->resource->idle_detection_enabled,
+            /** @var int $idle_threshold_minutes Idle threshold in minutes */
+            'idle_threshold_minutes' => $this->resource->idle_threshold_minutes,
         ];
     }
 }

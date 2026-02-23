@@ -56,6 +56,14 @@ class OrganizationUpdateRequest extends BaseFormRequest
             'screenshots_blurred' => [
                 'boolean',
             ],
+            'idle_detection_enabled' => [
+                'boolean',
+            ],
+            'idle_threshold_minutes' => [
+                'integer',
+                'min:1',
+                'max:60',
+            ],
             'number_format' => [
                 Rule::enum(NumberFormat::class),
             ],
@@ -139,5 +147,15 @@ class OrganizationUpdateRequest extends BaseFormRequest
     public function getScreenshotsBlurred(): ?bool
     {
         return $this->has('screenshots_blurred') ? $this->boolean('screenshots_blurred') : null;
+    }
+
+    public function getIdleDetectionEnabled(): ?bool
+    {
+        return $this->has('idle_detection_enabled') ? $this->boolean('idle_detection_enabled') : null;
+    }
+
+    public function getIdleThresholdMinutes(): ?int
+    {
+        return $this->has('idle_threshold_minutes') ? (int) $this->input('idle_threshold_minutes') : null;
     }
 }
