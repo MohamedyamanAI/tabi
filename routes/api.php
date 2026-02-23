@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\ProjectController;
 use App\Http\Controllers\Api\V1\ProjectMemberController;
 use App\Http\Controllers\Api\V1\Public\ReportController as PublicReportController;
 use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\ScreenshotController;
 use App\Http\Controllers\Api\V1\TagController;
 use App\Http\Controllers\Api\V1\TaskController;
 use App\Http\Controllers\Api\V1\TimeEntryController;
@@ -137,6 +138,14 @@ Route::prefix('v1')->name('v1.')->group(static function (): void {
             Route::get('/total-weekly-billable-time', [ChartController::class, 'totalWeeklyBillableTime'])->name('total-weekly-billable-time');
             Route::get('/total-weekly-billable-amount', [ChartController::class, 'totalWeeklyBillableAmount'])->name('total-weekly-billable-amount');
             Route::get('/weekly-history', [ChartController::class, 'weeklyHistory'])->name('weekly-history');
+        });
+
+        // Screenshot routes
+        Route::name('screenshots.')->prefix('/organizations/{organization}')->group(static function (): void {
+            Route::get('/screenshots', [ScreenshotController::class, 'index'])->name('index');
+            Route::post('/screenshots', [ScreenshotController::class, 'store'])->name('store')->middleware('check-organization-blocked');
+            Route::get('/screenshots/{screenshot}', [ScreenshotController::class, 'show'])->name('show');
+            Route::delete('/screenshots/{screenshot}', [ScreenshotController::class, 'destroy'])->name('destroy');
         });
 
         // Tag routes

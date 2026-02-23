@@ -67,6 +67,12 @@ class OrganizationController extends Controller
         if ($request->getPreventOverlappingTimeEntries() !== null) {
             $organization->prevent_overlapping_time_entries = $request->getPreventOverlappingTimeEntries();
         }
+        if ($request->getScreenshotsEnabled() !== null) {
+            $organization->screenshots_enabled = $request->getScreenshotsEnabled();
+        }
+        if ($request->getScreenshotIntervalMinutes() !== null) {
+            $organization->screenshot_interval_minutes = $request->getScreenshotIntervalMinutes();
+        }
         $hasBillableRate = $request->has('billable_rate');
         if ($hasBillableRate) {
             $oldBillableRate = $organization->billable_rate;

@@ -78,6 +78,10 @@ Route::middleware([
         return Inertia::render('Tags');
     })->name('tags');
 
+    Route::get('/screenshots', function () {
+        return Inertia::render('Screenshots');
+    })->name('screenshots');
+
     Route::get('/import', function () {
         return Inertia::render('Import');
     })->name('import');

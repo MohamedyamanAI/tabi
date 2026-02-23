@@ -132,3 +132,13 @@ export function canViewInvoices() {
 export function canCreateReports() {
     return currentUserHasPermission('reports:create');
 }
+
+export function canViewScreenshots() {
+    return currentUserHasPermission('screenshots:view:own') || currentUserHasPermission('screenshots:view:all');
+}
+export function canViewAllScreenshots() {
+    return currentUserHasPermission('screenshots:view:all');
+}
+export function canDeleteScreenshots() {
+    return currentUserHasPermission('screenshots:delete:own') || currentUserHasPermission('screenshots:delete:all');
+}
