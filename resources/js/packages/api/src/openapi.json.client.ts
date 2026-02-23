@@ -328,6 +328,8 @@ const OrganizationResource = z
         screenshots_enabled: z.boolean(),
         screenshot_interval_minutes: z.number().int(),
         screenshots_blurred: z.boolean(),
+        idle_detection_enabled: z.boolean(),
+        idle_threshold_minutes: z.number().int(),
     })
     .passthrough();
 const OrganizationUpdateRequest = z
@@ -345,6 +347,8 @@ const OrganizationUpdateRequest = z
         screenshots_enabled: z.boolean(),
         screenshot_interval_minutes: z.number().int().gte(1).lte(60),
         screenshots_blurred: z.boolean(),
+        idle_detection_enabled: z.boolean(),
+        idle_threshold_minutes: z.number().int().gte(1).lte(60),
     })
     .partial()
     .passthrough();
