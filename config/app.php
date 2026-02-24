@@ -24,7 +24,7 @@ return [
     |
     */
 
-    'name' => 'solidtime',
+    'name' => 'tabi',
 
     'version' => env('APP_VERSION'),
 
