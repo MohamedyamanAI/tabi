@@ -205,4 +205,5 @@ jobs:
             docker compose pull app
             docker compose up -d --no-deps app
             docker compose exec -T app php artisan migrate --force
+            docker compose restart queue
             docker image prune -f
