@@ -61,7 +61,7 @@ const page = usePage<{
             {{ page.props.flash?.message }}
         </div>
 
-        <Link
+        <a
             :href="route('auth.google')"
             class="flex items-center justify-center gap-2 w-full px-4 py-2.5 border border-text-secondary/30 rounded-lg text-sm font-medium text-text-primary bg-transparent hover:bg-white/5 transition">
             <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
@@ -79,7 +79,7 @@ const page = usePage<{
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
             Sign up with Google
-        </Link>
+        </a>
 
         <div class="relative my-6">
             <div class="absolute inset-0 flex items-center">
