@@ -38,6 +38,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property string $email
  * @property Carbon|null $email_verified_at
  * @property string|null $password
+ * @property string|null $google_id
  * @property string|null $two_factor_secret
  * @property string $timezone
  * @property bool $is_placeholder
@@ -83,6 +84,7 @@ class User extends Authenticatable implements AuditableContract, FilamentUser, M
         'name',
         'email',
         'password',
+        'google_id',
     ];
 
     /**

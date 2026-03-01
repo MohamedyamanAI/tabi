@@ -17,8 +17,11 @@ use App\Models\Organization;
 use App\Models\ProjectMember;
 use App\Models\TimeEntry;
 use App\Models\User;
+use App\Service\IpLookup\IpLookupServiceContract;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+use Laravel\Socialite\Contracts\User as SocialiteUser;
 
 class UserService
 {
@@ -60,6 +63,90 @@ class UserService
         );
 
         $user->ownedTeams()->save($organization);
+
+        return $user;
+    }
+
+    /**
+     * Find an existing user by Google id or email, or create a new user from Google OAuth data.
+     * When creating a new user, registration must be enabled (config app.enable_registration).
+     *
+     * @throws ValidationException When registration is disabled and no existing user matches
+     */
+    public function findOrCreateUserFromGoogle(SocialiteUser $googleUser): User
+    {
+        $googleId = $googleUser->getId();
+        $email = $googleUser->getEmail();
+
+        /** @var User|null $user */
+        $user = User::query()
+            ->where('google_id', $googleId)
+            ->first();
+
+        if ($user !== null) {
+            return $user;
+        }
+
+        $user = User::query()
+            ->where('email', $email)
+            ->where('is_placeholder', false)
+            ->first();
+
+        if ($user !== null) {
+            $user->google_id = $googleId;
+            $user->save();
+
+            return $user;
+        }
+
+        if (! config('app.enable_registration')) {
+            throw ValidationException::withMessages([
+                'email' => [__('Registration is disabled.')],
+            ]);
+        }
+
+        return $this->createUserFromGoogle($googleUser);
+    }
+
+    /**
+     * Create a new user and their default organization from Google OAuth data.
+     */
+    public function createUserFromGoogle(SocialiteUser $googleUser): User
+    {
+        $timezone = 'UTC';
+        $startOfWeek = Weekday::Monday;
+        $currency = null;
+
+        $ipLookupResponse = app(IpLookupServiceContract::class)->lookup(request()->ip());
+        if ($ipLookupResponse !== null) {
+            if ($ipLookupResponse->timezone !== null) {
+                $timezone = $ipLookupResponse->timezone;
+            }
+            if ($ipLookupResponse->startOfWeek !== null) {
+                $startOfWeek = $ipLookupResponse->startOfWeek;
+            }
+            $currency = $ipLookupResponse->currency;
+        }
+
+        $user = new User;
+        $user->name = $googleUser->getName();
+        $user->email = $googleUser->getEmail();
+        $user->google_id = $googleUser->getId();
+        $user->password = null;
+        $user->email_verified_at = Carbon::now();
+        $user->timezone = $timezone;
+        $user->week_start = $startOfWeek;
+        $user->save();
+
+        $organization = app(OrganizationService::class)->createOrganization(
+            $this->getOrganizationNameForUserName($user->name),
+            $user,
+            true,
+            $currency,
+        );
+
+        $user->ownedTeams()->save($organization);
+        $this->makeSureUserHasCurrentOrganization($user);
 
         return $user;
     }
