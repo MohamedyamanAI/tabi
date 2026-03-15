@@ -29,7 +29,9 @@ const client = computed(() => {
 });
 
 const projectTasksCount = computed(() => {
-    return tasks.value.filter((task) => task.project_id === props.project.id).length;
+    return tasks.value.filter(
+        (task) => task.project_id === props.project.id && !task.is_done
+    ).length;
 });
 
 function deleteProject() {
