@@ -36,6 +36,10 @@ class MemberResource extends BaseResource
             'is_placeholder' => $this->resource->user->is_placeholder,
             /** @var int|null $billable_rate Billable rate in cents per hour */
             'billable_rate' => $this->resource->billable_rate,
+            /** @var bool $can_manage_tasks Whether the employee can create/update/delete tasks on projects they have access to */
+            'can_manage_tasks' => $this->resource->can_manage_tasks,
+            /** @var bool $can_manage_projects Whether the employee can create/update/delete projects they have access to */
+            'can_manage_projects' => $this->resource->can_manage_projects,
         ];
     }
 }

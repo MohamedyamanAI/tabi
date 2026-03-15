@@ -271,11 +271,18 @@ const MemberResource = z
         role: z.string(),
         is_placeholder: z.boolean(),
         billable_rate: z.union([z.number(), z.null()]),
+        can_manage_tasks: z.boolean(),
+        can_manage_projects: z.boolean(),
     })
     .passthrough();
 const Role = z.enum(['owner', 'admin', 'manager', 'employee', 'placeholder']);
 const MemberUpdateRequest = z
-    .object({ role: Role, billable_rate: z.union([z.number(), z.null()]) })
+    .object({
+        role: Role,
+        billable_rate: z.union([z.number(), z.null()]),
+        can_manage_tasks: z.boolean(),
+        can_manage_projects: z.boolean(),
+    })
     .partial()
     .passthrough();
 const MemberMergeIntoRequest = z.object({ member_id: z.string() }).partial().passthrough();

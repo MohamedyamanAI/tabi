@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Service;
 
 use App\Enums\Role;
+use App\Models\Member;
 use App\Models\Organization;
 use App\Models\User;
 use App\Service\PermissionStore;
@@ -207,5 +208,50 @@ class PermissionStoreTest extends TestCase
         $this->assertNotContains('tasks:create:all', $result);
         $this->assertNotContains('tasks:update:all', $result);
         $this->assertNotContains('tasks:delete:all', $result);
+    }
+
+    public function test_employee_has_task_permissions_when_member_can_manage_tasks_is_true(): void
+    {
+        // Arrange: org setting false, but per-member can_manage_tasks true
+        $organization = Organization::factory()->create([
+            'employees_can_manage_tasks' => false,
+        ]);
+        $user = User::factory()->create();
+        $organization->users()->attach($user, ['role' => Role::Employee->value]);
+        $member = Member::query()
+            ->whereBelongsTo($organization, 'organization')
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+        $member->can_manage_tasks = true;
+        $member->save();
+        $permissionStore = new PermissionStore;
+        $this->actingAs($user);
+
+        // Act & Assert
+        $this->assertTrue($permissionStore->has($organization, 'tasks:create'));
+        $this->assertTrue($permissionStore->has($organization, 'tasks:update'));
+        $this->assertTrue($permissionStore->has($organization, 'tasks:delete'));
+    }
+
+    public function test_employee_has_project_permissions_when_member_can_manage_projects_is_true(): void
+    {
+        // Arrange
+        $organization = Organization::factory()->create();
+        $user = User::factory()->create();
+        $organization->users()->attach($user, ['role' => Role::Employee->value]);
+        $member = Member::query()
+            ->whereBelongsTo($organization, 'organization')
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+        $member->can_manage_projects = true;
+        $member->save();
+        $permissionStore = new PermissionStore;
+        $this->actingAs($user);
+
+        // Act & Assert
+        $this->assertTrue($permissionStore->has($organization, 'projects:create'));
+        $this->assertTrue($permissionStore->has($organization, 'projects:update'));
+        $this->assertTrue($permissionStore->has($organization, 'projects:delete'));
+        $this->assertFalse($permissionStore->has($organization, 'projects:view:all'));
     }
 }

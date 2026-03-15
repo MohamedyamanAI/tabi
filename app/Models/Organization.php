@@ -148,6 +148,8 @@ class Organization extends JetstreamTeam implements AuditableContract
                 'id',
                 'role',
                 'billable_rate',
+                'can_manage_tasks',
+                'can_manage_projects',
             ])
             ->withTimestamps()
             ->as('membership');

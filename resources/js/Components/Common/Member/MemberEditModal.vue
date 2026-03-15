@@ -25,6 +25,7 @@ import MemberRoleSelect from '@/Components/Common/Member/MemberRoleSelect.vue';
 import MemberOwnershipTransferConfirmModal from '@/Components/Common/Member/MemberOwnershipTransferConfirmModal.vue';
 import { getOrganizationCurrencyString } from '@/utils/money';
 import BillableIcon from '@/packages/ui/src/Icons/BillableIcon.vue';
+import { Checkbox } from '@/packages/ui/src';
 import { useOrganizationQuery } from '@/utils/useOrganizationQuery';
 import { getCurrentOrganizationId } from '@/utils/useUser';
 
@@ -41,6 +42,8 @@ const memberBody = ref<UpdateMemberBody>({
     // @ts-expect-error - The role value is always valid
     role: props.member.role,
     billable_rate: props.member.billable_rate,
+    can_manage_tasks: props.member.can_manage_tasks ?? false,
+    can_manage_projects: props.member.can_manage_projects ?? false,
 });
 
 async function submitBillableRate() {
@@ -95,6 +98,23 @@ watch(billableRateSelect, () => {
         }
     }
 });
+
+watch(
+    () => [show.value, props.member.id] as const,
+    () => {
+        if (show.value) {
+            memberBody.value = {
+                role: props.member.role,
+                billable_rate: props.member.billable_rate,
+                can_manage_tasks: props.member.can_manage_tasks ?? false,
+                can_manage_projects: props.member.can_manage_projects ?? false,
+            };
+        }
+    },
+    { immediate: true }
+);
+
+const isEmployee = computed(() => memberBody.value.role === 'employee');
 
 const displayedRate = computed({
     get() {
@@ -159,6 +179,46 @@ const roleDescription = computed(() => {
                             roleDescription
                         }}</FieldDescription>
                     </Field>
+                </div>
+                <div v-if="isEmployee" class="pt-5">
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="text-sm font-medium text-text-primary">Employee permissions</h3>
+                            <p class="mt-1 text-sm text-text-secondary">
+                                Grant this employee extra permissions for projects they are members of.
+                            </p>
+                        </div>
+                        <div class="flex flex-col gap-4 rounded-md border border-border-secondary bg-tertiary/50 p-3">
+                            <label
+                                for="canManageTasks"
+                                class="flex cursor-pointer items-start gap-3 text-text-primary">
+                                <Checkbox
+                                    id="canManageTasks"
+                                    v-model:checked="memberBody.can_manage_tasks"
+                                    class="mt-0.5 shrink-0" />
+                                <span class="flex flex-col gap-0.5">
+                                    <span class="text-sm font-medium">Can manage tasks</span>
+                                    <span class="text-sm text-text-secondary">
+                                        Create, edit, and delete tasks in projects they have access to.
+                                    </span>
+                                </span>
+                            </label>
+                            <label
+                                for="canManageProjects"
+                                class="flex cursor-pointer items-start gap-3 text-text-primary">
+                                <Checkbox
+                                    id="canManageProjects"
+                                    v-model:checked="memberBody.can_manage_projects"
+                                    class="mt-0.5 shrink-0" />
+                                <span class="flex flex-col gap-0.5">
+                                    <span class="text-sm font-medium">Can manage projects</span>
+                                    <span class="text-sm text-text-secondary">
+                                        Create projects and edit or delete projects they have access to.
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
                 <div class="pt-5">
                     <Field>

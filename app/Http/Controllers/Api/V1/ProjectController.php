@@ -33,6 +33,27 @@ class ProjectController extends Controller
     }
 
     /**
+     * Ensure user can only update/delete projects they have access to (when they don't have view:all).
+     *
+     * @throws AuthorizationException
+     */
+    private function ensureProjectVisibleToUser(Organization $organization, Project $project): void
+    {
+        if ($this->hasPermission($organization, 'projects:view:all')) {
+            return;
+        }
+        $user = $this->user();
+        $hasAccess = Project::query()
+            ->where('id', $project->id)
+            ->whereBelongsTo($organization, 'organization')
+            ->visibleByEmployee($user)
+            ->exists();
+        if (! $hasAccess) {
+            throw new AuthorizationException('You can only manage projects you have access to.');
+        }
+    }
+
+    /**
      * Get projects visible to the current user
      *
      * @return ProjectCollection<ProjectResource>
@@ -111,6 +132,17 @@ class ProjectController extends Controller
         $project->organization()->associate($organization);
         $project->save();
 
+        // When an employee creates a project, add them as a project member so they have access to it
+        if (! $this->hasPermission($organization, 'projects:view:all')) {
+            $member = $this->member($organization);
+            ProjectMember::query()->create([
+                'project_id' => $project->id,
+                'member_id' => $member->id,
+                'user_id' => $member->user_id,
+                'billable_rate' => $project->billable_rate,
+            ]);
+        }
+
         return new ProjectResource($project, true);
     }
 
@@ -124,6 +156,7 @@ class ProjectController extends Controller
     public function update(Organization $organization, Project $project, ProjectUpdateRequest $request, BillableRateService $billableRateService): JsonResource
     {
         $this->checkPermission($organization, 'projects:update', $project);
+        $this->ensureProjectVisibleToUser($organization, $project);
         $project->name = $request->input('name');
         $project->color = $request->input('color');
         $project->is_billable = (bool) $request->input('is_billable');
@@ -168,6 +201,7 @@ class ProjectController extends Controller
     public function destroy(Organization $organization, Project $project): JsonResponse
     {
         $this->checkPermission($organization, 'projects:delete', $project);
+        $this->ensureProjectVisibleToUser($organization, $project);
 
         if ($project->tasks()->exists()) {
             throw new EntityStillInUseApiException('project', 'task');

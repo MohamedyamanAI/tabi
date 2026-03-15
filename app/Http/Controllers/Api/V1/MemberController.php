@@ -91,6 +91,17 @@ class MemberController extends Controller
             $allowOwnerChange = $this->hasPermission($organization, 'members:change-ownership');
             $memberService->changeRole($member, $organization, $newRole, $allowOwnerChange);
         }
+        if ($member->role === Role::Employee->value) {
+            if ($request->hasCanManageTasks()) {
+                $member->can_manage_tasks = $request->getCanManageTasks();
+            }
+            if ($request->hasCanManageProjects()) {
+                $member->can_manage_projects = $request->getCanManageProjects();
+            }
+        } else {
+            $member->can_manage_tasks = false;
+            $member->can_manage_projects = false;
+        }
         $member->save();
 
         return new MemberResource($member);
