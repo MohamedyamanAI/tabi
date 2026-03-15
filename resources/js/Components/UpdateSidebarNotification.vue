@@ -2,11 +2,8 @@
 import { BellAlertIcon, XMarkIcon } from '@heroicons/vue/20/solid';
 import { SecondaryButton } from '@/packages/ui/src';
 import { useStorage } from '@vueuse/core';
+import { handleDesktopDownload } from '@/utils/download';
 const showReleaseInfo = useStorage('showReleaseInfo-desktop', true);
-
-function openDesktopGithubRepo() {
-    window.open('https://github.com/MohamedyamanAI/tabi-desktop', '_blank')?.focus();
-}
 </script>
 
 <template>
@@ -32,7 +29,7 @@ function openDesktopGithubRepo() {
             <SecondaryButton
                 size="small"
                 class="w-full text-center justify-center mt-1.5"
-                @click="openDesktopGithubRepo"
+                @click="handleDesktopDownload"
                 >Download now</SecondaryButton
             >
         </div>

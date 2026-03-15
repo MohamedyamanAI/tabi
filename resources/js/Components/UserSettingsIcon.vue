@@ -15,6 +15,8 @@ import {
     ChatBubbleLeftRightIcon,
 } from '@heroicons/vue/24/solid';
 import { openFeedback } from '@/utils/feedback';
+import { handleDesktopDownload } from '@/utils/download';
+import { ComputerDesktopIcon } from '@heroicons/vue/24/outline';
 
 const page = usePage<{
     has_services_extension?: boolean;
@@ -77,6 +79,16 @@ const logout = () => {
                         @click="openFeedback">
                         <ChatBubbleLeftRightIcon class="w-5 h-5 text-icon-default" />
                         <span>Feedback</span>
+                    </button>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem as-child>
+                    <button
+                        type="button"
+                        class="inline-flex items-center gap-2.5 w-full"
+                        @click="handleDesktopDownload">
+                        <ComputerDesktopIcon class="w-5 h-5 text-icon-default" />
+                        <span>Download Desktop</span>
                     </button>
                 </DropdownMenuItem>
 
