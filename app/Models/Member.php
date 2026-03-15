@@ -19,6 +19,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property string $id
  * @property string $role
  * @property int|null $billable_rate
+ * @property bool $can_manage_tasks
+ * @property bool $can_manage_projects
  * @property string $organization_id
  * @property string $user_id
  * @property Carbon|null $created_at
@@ -45,6 +47,16 @@ class Member extends JetstreamMembership implements AuditableContract
      * @var string
      */
     protected $table = 'members';
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'can_manage_tasks' => 'boolean',
+        'can_manage_projects' => 'boolean',
+    ];
 
     /**
      * @return BelongsTo<User, $this>

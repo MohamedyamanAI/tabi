@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Models\Member;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -58,28 +59,37 @@ class PermissionStore
             return [];
         }
 
-        $role = $organization->users
+        $member = $organization->users
             ->where('id', $user->getKey())
             ->first()
-            ?->membership
-            ?->role;
+            ?->membership;
 
-        if ($role === null) {
+        if ($member === null || ! $member instanceof Member) {
             return [];
         }
 
+        $role = $member->role;
         /** @var Role|null $roleObj */
         $roleObj = Jetstream::findRole($role);
-
         $permissions = $roleObj->permissions ?? [];
 
-        // If the organization allows employees to manage tasks and the user is an employee,
-        // add the task management permissions for accessible projects
-        if ($role === \App\Enums\Role::Employee->value && $organization->employees_can_manage_tasks) {
+        // Per-member: employee can manage tasks on projects they have access to
+        $canManageTasks = $member->can_manage_tasks
+            || ($role === \App\Enums\Role::Employee->value && $organization->employees_can_manage_tasks);
+        if ($role === \App\Enums\Role::Employee->value && $canManageTasks) {
             $permissions = array_merge($permissions, [
                 'tasks:create',
                 'tasks:update',
                 'tasks:delete',
+            ]);
+        }
+
+        // Per-member: employee can manage (create/update/delete) projects they can see
+        if ($role === \App\Enums\Role::Employee->value && $member->can_manage_projects) {
+            $permissions = array_merge($permissions, [
+                'projects:create',
+                'projects:update',
+                'projects:delete',
             ]);
         }
 

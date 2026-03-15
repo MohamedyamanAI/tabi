@@ -33,6 +33,8 @@ class MemberUpdateRequest extends BaseFormRequest
                 ],
                 $this->moneyRules()
             ),
+            'can_manage_tasks' => ['boolean'],
+            'can_manage_projects' => ['boolean'],
         ];
     }
 
@@ -46,5 +48,25 @@ class MemberUpdateRequest extends BaseFormRequest
     public function getRole(): Role
     {
         return Role::from($this->input('role'));
+    }
+
+    public function hasCanManageTasks(): bool
+    {
+        return $this->has('can_manage_tasks');
+    }
+
+    public function getCanManageTasks(): bool
+    {
+        return $this->boolean('can_manage_tasks');
+    }
+
+    public function hasCanManageProjects(): bool
+    {
+        return $this->has('can_manage_projects');
+    }
+
+    public function getCanManageProjects(): bool
+    {
+        return $this->boolean('can_manage_projects');
     }
 }
