@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import { onMounted } from 'vue';
 import { useTheme, theme, themeSetting } from '@/utils/theme';
 import { SunIcon, MoonIcon, ComputerDesktopIcon } from '@heroicons/vue/20/solid';
+import { handleDesktopDownload } from '@/utils/download';
 
 onMounted(async () => {
     useTheme();
@@ -60,6 +61,11 @@ function cycleTheme() {
                     class="px-8 py-3 text-lg rounded-lg bg-accent-300/80 text-white hover:bg-accent-300 transition-colors">
                     Get Started
                 </Link>
+                <button
+                    @click="handleDesktopDownload"
+                    class="px-8 py-3 text-lg rounded-lg border border-card-border text-text-primary hover:bg-card-background transition-colors">
+                    Download App
+                </button>
             </div>
         </main>
 
@@ -77,6 +83,11 @@ function cycleTheme() {
                 class="hover:text-text-primary transition-colors">
                 Terms of Service
             </Link>
+            <button
+                @click="handleDesktopDownload"
+                class="hover:text-text-primary transition-colors">
+                Download
+            </button>
         </footer>
     </div>
 </template>
