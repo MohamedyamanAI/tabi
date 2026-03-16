@@ -47,6 +47,7 @@ class ProjectMemberController extends Controller
         $this->checkPermission($organization, 'project-members:view', $project);
 
         $projectMembers = ProjectMember::query()
+            ->with(['member.user'])
             ->whereBelongsTo($project, 'project')
             ->orderBy('created_at', 'desc')
             ->paginate(config('app.pagination_per_page_default'));

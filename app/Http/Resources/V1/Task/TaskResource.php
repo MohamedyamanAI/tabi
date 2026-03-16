@@ -21,6 +21,8 @@ class TaskResource extends BaseResource
      */
     public function toArray(Request $request): array
     {
+        $assignee = $this->resource->relationLoaded('assignee') ? $this->resource->assignee : null;
+
         return [
             /** @var string $id ID */
             'id' => $this->resource->id,
@@ -30,6 +32,13 @@ class TaskResource extends BaseResource
             'is_done' => $this->resource->is_done,
             /** @var string $project_id ID of the project */
             'project_id' => $this->resource->project_id,
+            /** @var string|null $assignee_id ID of the assigned organization member (project member) */
+            'assignee_id' => $this->resource->assignee_id,
+            /** @var array{id: string, name: string}|null $assignee Assignee member (id and name) when loaded */
+            'assignee' => $assignee !== null ? [
+                'id' => $assignee->id,
+                'name' => $assignee->user?->name ?? '',
+            ] : null,
             /** @var int|null $estimated_time Estimated time in seconds */
             'estimated_time' => $this->resource->estimated_time,
             /** @var int $spent_time Spent time on this task in seconds (sum of the duration of all associated time entries, excl. still running time entries) */

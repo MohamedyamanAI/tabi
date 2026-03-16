@@ -401,6 +401,7 @@ const ProjectMemberResource = z
         id: z.string(),
         billable_rate: z.union([z.number(), z.null()]),
         member_id: z.string(),
+        member_name: z.union([z.string(), z.null()]).optional(),
         project_id: z.string(),
     })
     .passthrough();
@@ -616,12 +617,15 @@ const TagResource = z
     .passthrough();
 const TagStoreRequest = z.object({ name: z.string().min(1).max(255) }).passthrough();
 const TagUpdateRequest = z.object({ name: z.string().min(1).max(255) }).passthrough();
+const TaskAssignee = z.object({ id: z.string(), name: z.string() }).passthrough();
 const TaskResource = z
     .object({
         id: z.string(),
         name: z.string(),
         is_done: z.boolean(),
         project_id: z.string(),
+        assignee_id: z.union([z.string(), z.null()]).optional(),
+        assignee: z.union([TaskAssignee, z.null()]).optional(),
         estimated_time: z.union([z.number(), z.null()]),
         spent_time: z.number().int(),
         created_at: z.string(),
@@ -633,6 +637,7 @@ const TaskStoreRequest = z
         name: z.string().min(1).max(255),
         project_id: z.string(),
         estimated_time: z.union([z.number(), z.null()]).optional(),
+        assignee_id: z.union([z.string(), z.null()]).optional(),
     })
     .passthrough();
 const TaskUpdateRequest = z
@@ -640,6 +645,7 @@ const TaskUpdateRequest = z
         name: z.string().min(1).max(255),
         is_done: z.boolean().optional(),
         estimated_time: z.union([z.number(), z.null()]).optional(),
+        assignee_id: z.union([z.string(), z.null()]).optional(),
     })
     .passthrough();
 const start = z.union([z.string(), z.null()]).optional();
