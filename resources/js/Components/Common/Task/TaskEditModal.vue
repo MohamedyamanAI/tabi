@@ -2,7 +2,7 @@
 import TextInput from '@/packages/ui/src/Input/TextInput.vue';
 import SecondaryButton from '@/packages/ui/src/Buttons/SecondaryButton.vue';
 import DialogModal from '@/packages/ui/src/DialogModal.vue';
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import PrimaryButton from '@/packages/ui/src/Buttons/PrimaryButton.vue';
 import { useFocus } from '@vueuse/core';
 import { useTasksStore } from '@/utils/useTasks';
@@ -10,6 +10,15 @@ import type { Task, UpdateTaskBody } from '@/packages/api/src';
 import EstimatedTimeSection from '@/packages/ui/src/EstimatedTimeSection.vue';
 import { isAllowedToPerformPremiumAction } from '@/utils/billing';
 import { Field, FieldGroup, FieldLabel } from '@/packages/ui/src/field';
+import { UserIcon } from '@heroicons/vue/24/outline';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
+import { useProjectMembersQuery } from '@/utils/useProjectMembersQuery';
 
 const { updateTask } = useTasksStore();
 const show = defineModel('show', { default: false });
@@ -19,13 +28,38 @@ const props = defineProps<{
     task: Task;
 }>();
 
+const { projectMembers } = useProjectMembersQuery(computed(() => props.task.project_id));
+
 const taskBody = ref<UpdateTaskBody>({
     name: props.task.name,
     estimated_time: props.task.estimated_time,
+    assignee_id: props.task.assignee_id ?? '__unassigned__',
 });
 
+watch(
+    () => [show.value, props.task.id],
+    () => {
+        if (show.value) {
+            taskBody.value = {
+                name: props.task.name,
+                estimated_time: props.task.estimated_time,
+                assignee_id: props.task.assignee_id ?? '__unassigned__',
+            };
+        }
+    },
+    { immediate: true }
+);
+
+function assigneeIdForSubmit(): string | null {
+    const v = taskBody.value.assignee_id;
+    return v && v !== '__unassigned__' ? v : null;
+}
+
 async function submit() {
-    await updateTask(props.task.id, taskBody.value);
+    await updateTask(props.task.id, {
+        ...taskBody.value,
+        assignee_id: assigneeIdForSubmit(),
+    });
     show.value = false;
 }
 
@@ -56,6 +90,23 @@ useFocus(taskNameInput, { initialValue: true });
                         required
                         autocomplete="taskName"
                         @keydown.enter="submit()" />
+                </Field>
+                <Field class="w-full">
+                    <FieldLabel :icon="UserIcon" for="assignee">Assign to</FieldLabel>
+                    <Select v-model="taskBody.assignee_id">
+                        <SelectTrigger id="assignee">
+                            <SelectValue placeholder="Unassigned" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                            <SelectItem
+                                v-for="pm in projectMembers"
+                                :key="pm.id"
+                                :value="pm.member_id">
+                                {{ pm.member_name ?? pm.member_id }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </Field>
                 <EstimatedTimeSection
                     v-if="isAllowedToPerformPremiumAction()"

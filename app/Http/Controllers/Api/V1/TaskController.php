@@ -83,6 +83,7 @@ class TaskController extends Controller
         }
 
         $tasks = $query
+            ->with(['assignee.user'])
             ->orderBy('created_at', 'desc')
             ->paginate(config('app.pagination_per_page_default'));
 
@@ -110,11 +111,13 @@ class TaskController extends Controller
         $task = new Task;
         $task->name = $request->input('name');
         $task->project_id = $request->input('project_id');
+        $task->assignee_id = $request->getAssigneeId();
         if ($this->canAccessPremiumFeatures($organization) && $request->has('estimated_time')) {
             $task->estimated_time = $request->getEstimatedTime();
         }
         $task->organization()->associate($organization);
         $task->save();
+        $task->load('assignee.user');
 
         return new TaskResource($task);
     }
@@ -133,13 +136,42 @@ class TaskController extends Controller
             throw new AuthorizationException('Task does not belong to organization');
         }
 
-        if ($this->hasPermission($organization, 'tasks:update:all')) {
+        $member = $this->member($organization);
+        $isAssignee = $task->assignee_id !== null && $task->assignee_id === $member->id;
+        $canUpdateTasks = $this->hasPermission($organization, 'tasks:update:all')
+            || $this->hasPermission($organization, 'tasks:update');
+
+        // Assignee can mark task as done without full tasks:update permission
+        if ($isAssignee && ! $canUpdateTasks) {
+            $user = $this->user();
+            $hasAccess = Project::query()
+                ->where('id', $task->project_id)
+                ->visibleByEmployee($user)
+                ->exists();
+            if (! $hasAccess) {
+                throw new AuthorizationException('You do not have access to this project.');
+            }
+            if ($request->has('is_done')) {
+                $task->done_at = $request->getIsDone() ? Carbon::now() : null;
+            }
+            $task->save();
+            $task->load('assignee.user');
+
+            return new TaskResource($task);
+        }
+
+        if ($canUpdateTasks && $this->hasPermission($organization, 'tasks:update:all')) {
             $this->checkPermission($organization, 'tasks:update:all');
-        } else {
+        } elseif ($canUpdateTasks) {
             $this->checkScopedPermissionForProject($organization, $task->project, 'tasks:update');
+        } else {
+            throw new AuthorizationException;
         }
 
         $task->name = $request->input('name');
+        if ($request->hasAssigneeId()) {
+            $task->assignee_id = $request->getAssigneeId();
+        }
         if ($this->canAccessPremiumFeatures($organization) && $request->has('estimated_time')) {
             $task->estimated_time = $request->getEstimatedTime();
         }
@@ -147,6 +179,7 @@ class TaskController extends Controller
             $task->done_at = $request->getIsDone() ? Carbon::now() : null;
         }
         $task->save();
+        $task->load('assignee.user');
 
         return new TaskResource($task);
     }

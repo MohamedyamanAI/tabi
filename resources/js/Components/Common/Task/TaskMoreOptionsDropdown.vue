@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { TrashIcon, PencilSquareIcon, CheckCircleIcon } from '@heroicons/vue/20/solid';
 import type { Task } from '@/packages/api/src';
 import { canDeleteTasks, canUpdateTasks } from '@/utils/permissions';
+import { getCurrentMembershipId } from '@/utils/useUser';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -17,6 +19,12 @@ const emit = defineEmits<{
 const props = defineProps<{
     task: Task;
 }>();
+
+const canMarkAsDone = computed(
+    () =>
+        canUpdateTasks() ||
+        (!!props.task.assignee_id && props.task.assignee_id === getCurrentMembershipId())
+);
 </script>
 
 <template>
@@ -50,7 +58,7 @@ const props = defineProps<{
                 <span>Edit</span>
             </DropdownMenuItem>
             <DropdownMenuItem
-                v-if="canUpdateTasks()"
+                v-if="canMarkAsDone"
                 :aria-label="'Mark Task ' + props.task.name + ' as done'"
                 class="flex items-center space-x-3 cursor-pointer"
                 @click="emit('done')">

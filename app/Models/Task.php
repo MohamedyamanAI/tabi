@@ -24,6 +24,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property string $name
  * @property string $project_id
  * @property string $organization_id
+ * @property string|null $assignee_id
  * @property Carbon|null $done_at
  * @property int|null $estimated_time
  * @property int $spent_time
@@ -31,6 +32,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property Carbon|null $updated_at
  * @property-read Project $project
  * @property-read Organization $organization
+ * @property-read Member|null $assignee
  * @property-read Collection<int, TimeEntry> $timeEntries
  * @property-read bool $is_done
  *
@@ -133,6 +135,14 @@ class Task extends Model implements AuditableContract
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class, 'organization_id');
+    }
+
+    /**
+     * @return BelongsTo<Member, $this>
+     */
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(Member::class, 'assignee_id');
     }
 
     /**

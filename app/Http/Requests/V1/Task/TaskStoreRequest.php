@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Requests\V1\Task;
 
 use App\Http\Requests\V1\BaseFormRequest;
+use App\Models\Member;
 use App\Models\Organization;
 use App\Models\Project;
+use App\Models\ProjectMember;
 use App\Models\Task;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Database\Eloquent\Builder;
@@ -50,7 +52,23 @@ class TaskStoreRequest extends BaseFormRequest
                 'min:0',
                 'max:2147483647',
             ],
+            'assignee_id' => [
+                'nullable',
+                ExistsEloquent::make(Member::class, null, function (Builder $builder): Builder {
+                    /** @var Builder<Member> $builder */
+                    $projectId = $this->input('project_id');
+                    return $builder->whereBelongsTo($this->organization, 'organization')
+                        ->whereIn('id', ProjectMember::query()->select('member_id')->where('project_id', $projectId));
+                })->uuid(),
+            ],
         ];
+    }
+
+    public function getAssigneeId(): ?string
+    {
+        $value = $this->input('assignee_id');
+
+        return $value !== null && $value !== '' ? (string) $value : null;
     }
 
     public function getEstimatedTime(): ?int

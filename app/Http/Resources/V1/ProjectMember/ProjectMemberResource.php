@@ -20,6 +20,10 @@ class ProjectMemberResource extends BaseResource
      */
     public function toArray(Request $request): array
     {
+        $memberName = $this->resource->relationLoaded('member') && $this->resource->member?->relationLoaded('user')
+            ? $this->resource->member->user->name
+            : null;
+
         return [
             /** @var string $id ID of project member */
             'id' => $this->resource->id,
@@ -27,6 +31,8 @@ class ProjectMemberResource extends BaseResource
             'billable_rate' => $this->resource->billable_rate,
             /** @var string $member_id ID of the organization member */
             'member_id' => $this->resource->member_id,
+            /** @var string|null $member_name Display name of the member (user name) when loaded */
+            'member_name' => $memberName,
             /** @var string $project_id ID of the project */
             'project_id' => $this->resource->project_id,
         ];

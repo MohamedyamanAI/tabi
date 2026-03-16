@@ -13,6 +13,15 @@ import { Field, FieldGroup, FieldLabel } from '@/packages/ui/src/field';
 import { Button } from '@/packages/ui/src/Buttons';
 import { ChevronDown } from 'lucide-vue-next';
 import { FolderIcon } from '@heroicons/vue/20/solid';
+import { UserIcon } from '@heroicons/vue/24/outline';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/Components/ui/select';
+import { useProjectMembersQuery } from '@/utils/useProjectMembersQuery';
 
 const { createTask } = useTasksStore();
 const show = defineModel('show', { default: false });
@@ -20,12 +29,14 @@ const saving = ref(false);
 
 const taskName = ref('');
 const estimatedTime = ref<number | null>(null);
+const assigneeId = ref<string | null>('__unassigned__');
 
 const props = defineProps<{
     projectId: string;
 }>();
 
 const taskProjectId = ref<string>(props.projectId);
+const { projectMembers } = useProjectMembersQuery(taskProjectId);
 
 watch(
     () => props.projectId,
@@ -34,14 +45,25 @@ watch(
     }
 );
 
+watch(show, (isShow) => {
+    if (isShow) {
+        assigneeId.value = '__unassigned__';
+    }
+});
+
 async function submit() {
     await createTask({
         name: taskName.value,
         project_id: taskProjectId.value,
         estimated_time: estimatedTime.value,
+        assignee_id:
+            assigneeId.value && assigneeId.value !== '__unassigned__'
+                ? assigneeId.value
+                : undefined,
     });
     show.value = false;
     taskName.value = '';
+    assigneeId.value = '__unassigned__';
 }
 
 const taskNameInput = ref<HTMLInputElement | null>(null);
@@ -87,6 +109,23 @@ useFocus(taskNameInput, { initialValue: true });
                             </Button>
                         </template>
                     </ProjectDropdown>
+                </Field>
+                <Field class="w-full">
+                    <FieldLabel :icon="UserIcon" for="assignee">Assign to</FieldLabel>
+                    <Select v-model="assigneeId">
+                        <SelectTrigger id="assignee">
+                            <SelectValue placeholder="Unassigned" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                            <SelectItem
+                                v-for="pm in projectMembers"
+                                :key="pm.id"
+                                :value="pm.member_id">
+                                {{ pm.member_name ?? pm.member_id }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </Field>
                 <EstimatedTimeSection
                     v-if="isAllowedToPerformPremiumAction()"
