@@ -33,6 +33,18 @@ function markTaskAsDone() {
 
 const showTaskEditModal = ref(false);
 
+const TASK_STATUS_LABELS: Record<string, string> = {
+    active: 'Active',
+    for_review: 'For review',
+    for_later: 'For later',
+    cancelled: 'Cancelled',
+    done: 'Done',
+};
+
+function taskStatusLabel(status: string | undefined): string {
+    return status ? TASK_STATUS_LABELS[status] ?? status : 'Active';
+}
+
 const showTaskActions = computed(
     () =>
         canDeleteTasks() ||
@@ -75,13 +87,10 @@ const showTaskActions = computed(
         </div>
         <div
             class="whitespace-nowrap px-3 py-4 text-sm text-text-secondary flex space-x-1 items-center font-medium">
-            <template v-if="task.is_done">
+            <template v-if="task.status === 'done'">
                 <CheckCircleIcon class="w-5"></CheckCircleIcon>
-                <span>Done</span>
             </template>
-            <template v-else>
-                <span>Active</span>
-            </template>
+            <span>{{ taskStatusLabel(task.status) }}</span>
         </div>
         <div
             class="relative whitespace-nowrap flex items-center pl-3 text-right text-sm font-medium sm:pr-0 pr-4 sm:pr-6 lg:pr-8 3xl:pr-12">

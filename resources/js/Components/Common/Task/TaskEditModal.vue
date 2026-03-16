@@ -30,10 +30,19 @@ const props = defineProps<{
 
 const { projectMembers } = useProjectMembersQuery(computed(() => props.task.project_id));
 
+const TASK_STATUS_OPTIONS = [
+    { value: 'active', label: 'Active' },
+    { value: 'for_review', label: 'For review' },
+    { value: 'for_later', label: 'For later' },
+    { value: 'cancelled', label: 'Cancelled' },
+    { value: 'done', label: 'Done' },
+] as const;
+
 const taskBody = ref<UpdateTaskBody>({
     name: props.task.name,
     estimated_time: props.task.estimated_time,
     assignee_id: props.task.assignee_id ?? '__unassigned__',
+    status: props.task.status ?? 'active',
 });
 
 watch(
@@ -44,6 +53,7 @@ watch(
                 name: props.task.name,
                 estimated_time: props.task.estimated_time,
                 assignee_id: props.task.assignee_id ?? '__unassigned__',
+                status: props.task.status ?? 'active',
             };
         }
     },
@@ -104,6 +114,22 @@ useFocus(taskNameInput, { initialValue: true });
                                 :key="pm.id"
                                 :value="pm.member_id">
                                 {{ pm.member_name ?? pm.member_id }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </Field>
+                <Field class="w-full">
+                    <FieldLabel for="status">Status</FieldLabel>
+                    <Select v-model="taskBody.status">
+                        <SelectTrigger id="status">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem
+                                v-for="opt in TASK_STATUS_OPTIONS"
+                                :key="opt.value"
+                                :value="opt.value">
+                                {{ opt.label }}
                             </SelectItem>
                         </SelectContent>
                     </Select>

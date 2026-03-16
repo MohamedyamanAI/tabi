@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\TaskStatus;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\Task;
@@ -25,6 +26,7 @@ class TaskFactory extends Factory
             'name' => $this->faker->word(),
             'project_id' => Project::factory(),
             'organization_id' => Organization::factory(),
+            'status' => TaskStatus::Active,
             'done_at' => null,
             'estimated_time' => null,
         ];
@@ -40,6 +42,7 @@ class TaskFactory extends Factory
     public function isDone(): self
     {
         return $this->state(fn (array $attributes) => [
+            'status' => TaskStatus::Done,
             'done_at' => $this->faker->dateTime('now', 'UTC'),
         ]);
     }

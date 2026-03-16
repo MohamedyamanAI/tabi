@@ -30,6 +30,8 @@ class TaskResource extends BaseResource
             'name' => $this->resource->name,
             /** @var bool $is_done Whether the task is done */
             'is_done' => $this->resource->is_done,
+            /** @var string $status Task status: active, for_review, for_later, cancelled, done */
+            'status' => $this->resource->status->value,
             /** @var string $project_id ID of the project */
             'project_id' => $this->resource->project_id,
             /** @var string|null $assignee_id ID of the assigned organization member (project member) */
