@@ -2,7 +2,6 @@
 import TextInput from '@/packages/ui/src/Input/TextInput.vue';
 import SecondaryButton from '@/packages/ui/src/Buttons/SecondaryButton.vue';
 import DialogModal from '@/packages/ui/src/DialogModal.vue';
-import { ref, watch } from 'vue';
 import PrimaryButton from '@/packages/ui/src/Buttons/PrimaryButton.vue';
 import { useFocus } from '@vueuse/core';
 import { useTasksStore } from '@/utils/useTasks';
@@ -22,6 +21,8 @@ import {
     SelectValue,
 } from '@/Components/ui/select';
 import { useProjectMembersQuery } from '@/utils/useProjectMembersQuery';
+import { Checkbox } from '@/packages/ui/src';
+import { computed, ref, watch } from 'vue';
 
 const { createTask } = useTasksStore();
 const show = defineModel('show', { default: false });
@@ -30,6 +31,12 @@ const saving = ref(false);
 const taskName = ref('');
 const estimatedTime = ref<number | null>(null);
 const assigneeId = ref<string | null>('__unassigned__');
+const markAsLater = ref(false);
+const markAsReview = ref(false);
+
+const status = computed(() =>
+    markAsReview.value ? 'for_review' : markAsLater.value ? 'for_later' : 'active'
+);
 
 const props = defineProps<{
     projectId: string;
@@ -48,8 +55,19 @@ watch(
 watch(show, (isShow) => {
     if (isShow) {
         assigneeId.value = '__unassigned__';
+        markAsLater.value = false;
+        markAsReview.value = false;
     }
 });
+
+function setMarkAsLater(checked: boolean) {
+    markAsLater.value = checked;
+    if (checked) markAsReview.value = false;
+}
+function setMarkAsReview(checked: boolean) {
+    markAsReview.value = checked;
+    if (checked) markAsLater.value = false;
+}
 
 async function submit() {
     await createTask({
@@ -60,10 +78,13 @@ async function submit() {
             assigneeId.value && assigneeId.value !== '__unassigned__'
                 ? assigneeId.value
                 : undefined,
+        status: status.value,
     });
     show.value = false;
     taskName.value = '';
     assigneeId.value = '__unassigned__';
+    markAsLater.value = false;
+    markAsReview.value = false;
 }
 
 const taskNameInput = ref<HTMLInputElement | null>(null);
@@ -127,6 +148,28 @@ useFocus(taskNameInput, { initialValue: true });
                         </SelectContent>
                     </Select>
                 </Field>
+                <div class="flex flex-row flex-wrap items-center gap-6">
+                    <label
+                        for="markAsLater"
+                        class="flex cursor-pointer items-center gap-3 text-text-primary">
+                        <Checkbox
+                            id="markAsLater"
+                            :checked="markAsLater"
+                            class="shrink-0"
+                            @update:checked="setMarkAsLater" />
+                        <span class="text-sm font-medium">For later</span>
+                    </label>
+                    <label
+                        for="markAsReview"
+                        class="flex cursor-pointer items-center gap-3 text-text-primary">
+                        <Checkbox
+                            id="markAsReview"
+                            :checked="markAsReview"
+                            class="shrink-0"
+                            @update:checked="setMarkAsReview" />
+                        <span class="text-sm font-medium">For review</span>
+                    </label>
+                </div>
                 <EstimatedTimeSection
                     v-if="isAllowedToPerformPremiumAction()"
                     v-model="estimatedTime"

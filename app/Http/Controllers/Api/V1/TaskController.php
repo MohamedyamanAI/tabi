@@ -10,6 +10,7 @@ use App\Http\Requests\V1\Task\TaskStoreRequest;
 use App\Http\Requests\V1\Task\TaskUpdateRequest;
 use App\Http\Resources\V1\Task\TaskCollection;
 use App\Http\Resources\V1\Task\TaskResource;
+use App\Enums\TaskStatus;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\Task;
@@ -112,10 +113,12 @@ class TaskController extends Controller
         $task->name = $request->input('name');
         $task->project_id = $request->input('project_id');
         $task->assignee_id = $request->getAssigneeId();
+        $task->status = $request->has('status') ? $request->getStatus() : TaskStatus::Active;
         if ($this->canAccessPremiumFeatures($organization) && $request->has('estimated_time')) {
             $task->estimated_time = $request->getEstimatedTime();
         }
         $task->organization()->associate($organization);
+        $this->syncDoneAtForStatus($task);
         $task->save();
         $task->load('assignee.user');
 
@@ -141,7 +144,7 @@ class TaskController extends Controller
         $canUpdateTasks = $this->hasPermission($organization, 'tasks:update:all')
             || $this->hasPermission($organization, 'tasks:update');
 
-        // Assignee can mark task as done without full tasks:update permission
+        // Assignee can update status (e.g. mark as done) without full tasks:update permission
         if ($isAssignee && ! $canUpdateTasks) {
             $user = $this->user();
             $hasAccess = Project::query()
@@ -151,8 +154,12 @@ class TaskController extends Controller
             if (! $hasAccess) {
                 throw new AuthorizationException('You do not have access to this project.');
             }
-            if ($request->has('is_done')) {
-                $task->done_at = $request->getIsDone() ? Carbon::now() : null;
+            if ($request->has('status')) {
+                $task->status = $request->getStatus();
+                $this->syncDoneAtForStatus($task);
+            } elseif ($request->has('is_done')) {
+                $task->status = $request->getIsDone() ? TaskStatus::Done : TaskStatus::Active;
+                $this->syncDoneAtForStatus($task);
             }
             $task->save();
             $task->load('assignee.user');
@@ -172,16 +179,30 @@ class TaskController extends Controller
         if ($request->hasAssigneeId()) {
             $task->assignee_id = $request->getAssigneeId();
         }
+        if ($request->hasStatus()) {
+            $task->status = $request->getStatus();
+            $this->syncDoneAtForStatus($task);
+        }
         if ($this->canAccessPremiumFeatures($organization) && $request->has('estimated_time')) {
             $task->estimated_time = $request->getEstimatedTime();
         }
-        if ($request->has('is_done')) {
-            $task->done_at = $request->getIsDone() ? Carbon::now() : null;
+        if ($request->has('is_done') && ! $request->hasStatus()) {
+            $task->status = $request->getIsDone() ? TaskStatus::Done : TaskStatus::Active;
+            $this->syncDoneAtForStatus($task);
         }
         $task->save();
         $task->load('assignee.user');
 
         return new TaskResource($task);
+    }
+
+    private function syncDoneAtForStatus(Task $task): void
+    {
+        if ($task->status === TaskStatus::Done) {
+            $task->done_at = $task->done_at ?? Carbon::now();
+        } else {
+            $task->done_at = null;
+        }
     }
 
     /**

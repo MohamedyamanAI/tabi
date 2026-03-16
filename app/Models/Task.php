@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\TaskStatus;
 use App\Models\Concerns\CustomAuditable;
 use App\Models\Concerns\HasUuids;
 use Database\Factories\TaskFactory;
@@ -25,6 +26,7 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property string $project_id
  * @property string $organization_id
  * @property string|null $assignee_id
+ * @property TaskStatus $status
  * @property Carbon|null $done_at
  * @property int|null $estimated_time
  * @property int $spent_time
@@ -56,6 +58,7 @@ class Task extends Model implements AuditableContract
     protected $casts = [
         'name' => 'string',
         'estimated_time' => 'integer',
+        'status' => TaskStatus::class,
         'done_at' => 'datetime',
     ];
 
@@ -171,7 +174,7 @@ class Task extends Model implements AuditableContract
     public function isDone(): Attribute
     {
         return Attribute::make(
-            get: fn (mixed $value, array $attributes) => isset($attributes['done_at']),
+            get: fn (mixed $value, array $attributes) => ($attributes['status'] ?? 'active') === \App\Enums\TaskStatus::Done->value,
         );
     }
 }

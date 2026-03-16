@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\V1\Task;
 
 use App\Http\Requests\V1\BaseFormRequest;
+use App\Enums\TaskStatus;
 use App\Models\Member;
 use App\Models\Organization;
 use App\Models\Project;
@@ -12,6 +13,7 @@ use App\Models\ProjectMember;
 use App\Models\Task;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\Rule;
 use Korridor\LaravelModelValidationRules\Rules\ExistsEloquent;
 use Korridor\LaravelModelValidationRules\Rules\UniqueEloquent;
 
@@ -61,7 +63,19 @@ class TaskStoreRequest extends BaseFormRequest
                         ->whereIn('id', ProjectMember::query()->select('member_id')->where('project_id', $projectId));
                 })->uuid(),
             ],
+            'status' => [
+                'nullable',
+                'string',
+                Rule::enum(TaskStatus::class),
+            ],
         ];
+    }
+
+    public function getStatus(): TaskStatus
+    {
+        $value = $this->input('status');
+
+        return ($value !== null && $value !== '') ? TaskStatus::from($value) : TaskStatus::Active;
     }
 
     public function getAssigneeId(): ?string

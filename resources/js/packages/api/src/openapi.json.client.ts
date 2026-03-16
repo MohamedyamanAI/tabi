@@ -618,11 +618,13 @@ const TagResource = z
 const TagStoreRequest = z.object({ name: z.string().min(1).max(255) }).passthrough();
 const TagUpdateRequest = z.object({ name: z.string().min(1).max(255) }).passthrough();
 const TaskAssignee = z.object({ id: z.string(), name: z.string() }).passthrough();
+const TaskStatus = z.enum(['active', 'for_review', 'for_later', 'cancelled', 'done']);
 const TaskResource = z
     .object({
         id: z.string(),
         name: z.string(),
         is_done: z.boolean(),
+        status: TaskStatus,
         project_id: z.string(),
         assignee_id: z.union([z.string(), z.null()]).optional(),
         assignee: z.union([TaskAssignee, z.null()]).optional(),
@@ -638,6 +640,7 @@ const TaskStoreRequest = z
         project_id: z.string(),
         estimated_time: z.union([z.number(), z.null()]).optional(),
         assignee_id: z.union([z.string(), z.null()]).optional(),
+        status: TaskStatus.optional(),
     })
     .passthrough();
 const TaskUpdateRequest = z
@@ -646,6 +649,7 @@ const TaskUpdateRequest = z
         is_done: z.boolean().optional(),
         estimated_time: z.union([z.number(), z.null()]).optional(),
         assignee_id: z.union([z.string(), z.null()]).optional(),
+        status: TaskStatus.optional(),
     })
     .passthrough();
 const start = z.union([z.string(), z.null()]).optional();
@@ -778,6 +782,7 @@ export const schemas = {
     TagStoreRequest,
     TagUpdateRequest,
     TaskResource,
+    TaskStatus,
     TaskStoreRequest,
     TaskUpdateRequest,
     start,
