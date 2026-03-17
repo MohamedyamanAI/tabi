@@ -104,7 +104,7 @@ watch(
     () => {
         if (show.value) {
             memberBody.value = {
-                role: props.member.role,
+                role: props.member.role as UpdateMemberBody['role'],
                 billable_rate: props.member.billable_rate,
                 can_manage_tasks: props.member.can_manage_tasks ?? false,
                 can_manage_projects: props.member.can_manage_projects ?? false,
