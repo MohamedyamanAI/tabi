@@ -1,0 +1,11 @@
+{
+    "name": "Billing",
+    "alias": "billing",
+    "description": "Seat-based billing via Polar",
+    "keywords": ["billing", "polar", "subscription"],
+    "priority": 0,
+    "providers": [
+        "Extensions\\Billing\\App\\Providers\\BillingServiceProvider"
+    ],
+    "files": []
+}
