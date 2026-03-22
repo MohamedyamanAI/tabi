@@ -2,6 +2,12 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
+use Illuminate\Foundation\Http\Middleware\TrimStrings;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Http\Request;
+
 /*
 |--------------------------------------------------------------------------
 | Create The Application
@@ -13,8 +19,32 @@ declare(strict_types=1);
 |
 */
 
-$app = new Illuminate\Foundation\Application(
+$app = new Application(
     $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
+);
+
+/*
+|--------------------------------------------------------------------------
+| Webhook routes (e.g. Polar)
+|--------------------------------------------------------------------------
+|
+| Signature verification uses the raw request body (see getContent()). Exclude
+| webhooks from CSRF (if registered under the "web" group) and from global
+| middleware that decodes JSON and mutates the parsed input bags (TrimStrings,
+| ConvertEmptyStringsToNull), which can diverge from the bytes Polar signed.
+|
+*/
+
+ValidateCsrfToken::except([
+    'webhooks/*',
+]);
+
+TrimStrings::skipWhen(
+    static fn (Request $request): bool => $request->is('webhooks/*')
+);
+
+ConvertEmptyStringsToNull::skipWhen(
+    static fn (Request $request): bool => $request->is('webhooks/*')
 );
 
 /*
