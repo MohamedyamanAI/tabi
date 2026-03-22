@@ -9,6 +9,10 @@ import type { UpdateOrganizationBody } from '@/packages/api/src';
 import { useOrganizationStore } from '@/utils/useOrganization';
 import { storeToRefs } from 'pinia';
 import { useMutation, useQueryClient } from '@tanstack/vue-query';
+import { isAllowedToUseScreenshots, isBillingActivated } from '@/utils/billing';
+import { canManageBilling, canUpdateOrganization } from '@/utils/permissions';
+import { Link } from '@inertiajs/vue3';
+import { CreditCardIcon, CameraIcon } from '@heroicons/vue/20/solid';
 
 const store = useOrganizationStore();
 const { updateOrganization } = store;
@@ -56,11 +60,38 @@ async function submit() {
         </template>
 
         <template #form>
-            <div class="col-span-6 sm:col-span-4 space-y-4">
+            <div v-if="!isAllowedToUseScreenshots()" class="col-span-6 sm:col-span-4">
+                <div
+                    class="rounded-full flex items-center justify-center w-20 h-20 mx-auto border border-border-tertiary bg-secondary">
+                    <CameraIcon class="w-12" />
+                </div>
+                <div class="max-w-sm text-center mx-auto py-4 text-base">
+                    <p class="py-1">
+                        Screenshot capture is available on the <strong>Pro plan</strong>.
+                    </p>
+                    <p class="py-1">
+                        To enable screenshot settings for your organization,
+                        <strong>please upgrade your billing plan</strong>.
+                    </p>
+
+                    <Link
+                        v-if="isBillingActivated() && canManageBilling() && canUpdateOrganization()"
+                        href="/billing">
+                        <PrimaryButton type="button" class="mt-6 px-4 py-2 text-sm">
+                            <span class="inline-flex items-center gap-2">
+                                <CreditCardIcon class="w-4 h-4" />
+                                <span>Manage billing</span>
+                            </span>
+                        </PrimaryButton>
+                    </Link>
+                </div>
+            </div>
+            <div v-else class="col-span-6 sm:col-span-4 space-y-4">
                 <Field orientation="horizontal">
                     <Checkbox
                         id="screenshotsEnabled"
-                        v-model:checked="form.screenshots_enabled" />
+                        v-model:checked="form.screenshots_enabled"
+                        :disabled="!isAllowedToUseScreenshots()" />
                     <FieldLabel for="screenshotsEnabled">Enable Screenshots</FieldLabel>
                 </Field>
                 <Field v-if="form.screenshots_enabled">
@@ -73,12 +104,14 @@ async function submit() {
                         type="number"
                         min="3"
                         max="60"
+                        :disabled="!isAllowedToUseScreenshots()"
                         class="w-24" />
                 </Field>
                 <Field v-if="form.screenshots_enabled" orientation="horizontal">
                     <Checkbox
                         id="screenshotsBlurred"
-                        v-model:checked="form.screenshots_blurred" />
+                        v-model:checked="form.screenshots_blurred"
+                        :disabled="!isAllowedToUseScreenshots()" />
                     <div>
                         <FieldLabel for="screenshotsBlurred">Blur screenshots</FieldLabel>
                         <p class="text-xs text-muted">
@@ -92,7 +125,11 @@ async function submit() {
         </template>
 
         <template #actions>
-            <PrimaryButton :disabled="mutation.isPending.value" @click="submit">Save</PrimaryButton>
+            <PrimaryButton
+                :disabled="mutation.isPending.value || !isAllowedToUseScreenshots()"
+                @click="submit">
+                Save
+            </PrimaryButton>
         </template>
     </FormSection>
 </template>

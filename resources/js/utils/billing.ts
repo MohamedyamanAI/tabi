@@ -49,6 +49,60 @@ export function isBlocked() {
     return page.props.billing.is_blocked;
 }
 
+export function getTier() {
+    const page = usePage<{
+        billing: {
+            tier: 'standard' | 'pro' | null;
+        };
+    }>();
+
+    return page.props.billing.tier;
+}
+
+export function getSeatCount() {
+    const page = usePage<{
+        billing: {
+            seat_count: number;
+        };
+    }>();
+
+    return page.props.billing.seat_count;
+}
+
+export function getUsedSeats() {
+    const page = usePage<{
+        billing: {
+            used_seats: number;
+        };
+    }>();
+
+    return page.props.billing.used_seats;
+}
+
+export function getBillingCycle() {
+    const page = usePage<{
+        billing: {
+            billing_cycle: 'monthly' | 'annual' | null;
+        };
+    }>();
+
+    return page.props.billing.billing_cycle;
+}
+
+export function getCurrentPeriodEndsAt() {
+    const page = usePage<{
+        billing: {
+            current_period_ends_at: string | null;
+        };
+    }>();
+
+    return page.props.billing.current_period_ends_at;
+}
+
+export function isAllowedToUseScreenshots() {
+    return getTier() === 'pro';
+}
+
 export function isFreePlan() {
     return !hasActiveSubscription() && !isInTrial();
 }
