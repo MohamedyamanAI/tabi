@@ -48,6 +48,16 @@ class HandleInertiaRequests extends Middleware
 
         $currentOrganization = $request->user()?->currentTeam;
 
+        // Billing depends on relationships (`realUsers`, `owner`, `polarSubscription`).
+        // In non-production environments we have `preventLazyLoading`, so we must eager-load them.
+        if ($currentOrganization !== null) {
+            $currentOrganization->loadMissing([
+                'realUsers',
+                'owner',
+                'polarSubscription',
+            ]);
+        }
+
         return array_merge(parent::share($request), [
             'has_billing_extension' => $hasBilling,
             'has_invoicing_extension' => $hasInvoicing,
@@ -57,6 +67,12 @@ class HandleInertiaRequests extends Middleware
                 'has_trial' => $billing->hasTrial($currentOrganization),
                 'trial_until' => $billing->getTrialUntil($currentOrganization)?->toIso8601ZuluString(),
                 'is_blocked' => $billing->isBlocked($currentOrganization),
+                'tier' => $billing->getTier($currentOrganization),
+                'seat_count' => $billing->getSeatCount($currentOrganization),
+                'used_seats' => $billing->getUsedSeats($currentOrganization),
+                'billing_cycle' => $billing->getBillingCycle($currentOrganization),
+                'current_period_ends_at' => $billing->getCurrentPeriodEnd($currentOrganization)?->toIso8601ZuluString(),
+                'cancel_at_period_end' => (bool) ($currentOrganization->polarSubscription?->cancel_at_period_end ?? false),
             ] : null,
             'flash' => [
                 'message' => fn () => $request->session()->get('message'),

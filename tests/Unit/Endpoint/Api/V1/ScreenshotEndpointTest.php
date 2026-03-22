@@ -9,15 +9,53 @@ use App\Models\Member;
 use App\Models\Organization;
 use App\Models\Screenshot;
 use App\Models\TimeEntry;
+use App\Service\BillingContract;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Laravel\Passport\Passport;
+use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\UsesClass;
 
 #[UsesClass(ScreenshotController::class)]
 class ScreenshotEndpointTest extends ApiEndpointTestAbstract
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->mockProBillingTier();
+    }
+
+    private function mockProBillingTier(): void
+    {
+        $this->mock(BillingContract::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('hasSubscription')->andReturn(true);
+            $mock->shouldReceive('hasTrial')->andReturn(false);
+            $mock->shouldReceive('getTrialUntil')->andReturn(null);
+            $mock->shouldReceive('isBlocked')->andReturn(false);
+            $mock->shouldReceive('getTier')->andReturn('pro');
+            $mock->shouldReceive('getSeatCount')->andReturn(5);
+            $mock->shouldReceive('getUsedSeats')->andReturn(1);
+            $mock->shouldReceive('getBillingCycle')->andReturn('monthly');
+            $mock->shouldReceive('getCurrentPeriodEnd')->andReturn(null);
+        });
+    }
+
+    private function mockNonProBillingTier(): void
+    {
+        $this->mock(BillingContract::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('hasSubscription')->andReturn(true);
+            $mock->shouldReceive('hasTrial')->andReturn(false);
+            $mock->shouldReceive('getTrialUntil')->andReturn(null);
+            $mock->shouldReceive('isBlocked')->andReturn(false);
+            $mock->shouldReceive('getTier')->andReturn('standard');
+            $mock->shouldReceive('getSeatCount')->andReturn(5);
+            $mock->shouldReceive('getUsedSeats')->andReturn(1);
+            $mock->shouldReceive('getBillingCycle')->andReturn('monthly');
+            $mock->shouldReceive('getCurrentPeriodEnd')->andReturn(null);
+        });
+    }
+
     public function test_index_endpoint_fails_if_user_has_no_permission_to_view_screenshots(): void
     {
         // Arrange
@@ -168,6 +206,81 @@ class ScreenshotEndpointTest extends ApiEndpointTestAbstract
 
         // Assert
         $response->assertStatus(422);
+    }
+
+    public function test_index_endpoint_fails_for_non_pro_tier_even_with_view_permission(): void
+    {
+        // Arrange
+        $this->mockNonProBillingTier();
+        $data = $this->createUserWithPermission([
+            'screenshots:view:all',
+        ]);
+        Passport::actingAs($data->user);
+
+        // Act
+        $response = $this->getJson(route('api.v1.screenshots.index', [$data->organization->getKey()]));
+
+        // Assert
+        $response->assertForbidden();
+    }
+
+    public function test_store_endpoint_fails_for_non_pro_tier_even_if_enabled_and_with_permission(): void
+    {
+        // Arrange
+        $this->mockNonProBillingTier();
+        $data = $this->createUserWithPermission([
+            'screenshots:upload',
+        ]);
+        $data->organization->screenshots_enabled = true;
+        $data->organization->save();
+        $timeEntry = TimeEntry::factory()->forMember($data->member)->forOrganization($data->organization)->create();
+        Passport::actingAs($data->user);
+
+        // Act
+        $response = $this->postJson(route('api.v1.screenshots.store', [$data->organization->getKey()]), [
+            'time_entry_id' => $timeEntry->getKey(),
+            'captured_at' => now()->toIso8601ZuluString(),
+            'screenshot' => UploadedFile::fake()->image('screenshot.jpg', 320, 180),
+        ]);
+
+        // Assert
+        $response->assertForbidden();
+    }
+
+    public function test_show_endpoint_fails_for_non_pro_tier_even_with_view_permission(): void
+    {
+        // Arrange
+        $this->mockNonProBillingTier();
+        $data = $this->createUserWithPermission([
+            'screenshots:view:all',
+        ]);
+        $timeEntry = TimeEntry::factory()->forMember($data->member)->forOrganization($data->organization)->create();
+        $screenshot = Screenshot::factory()->forTimeEntry($timeEntry)->create();
+        Passport::actingAs($data->user);
+
+        // Act
+        $response = $this->getJson(route('api.v1.screenshots.show', [$data->organization->getKey(), $screenshot->getKey()]));
+
+        // Assert
+        $response->assertForbidden();
+    }
+
+    public function test_destroy_endpoint_fails_for_non_pro_tier_even_with_delete_permission(): void
+    {
+        // Arrange
+        $this->mockNonProBillingTier();
+        $data = $this->createUserWithPermission([
+            'screenshots:delete:all',
+        ]);
+        $timeEntry = TimeEntry::factory()->forMember($data->member)->forOrganization($data->organization)->create();
+        $screenshot = Screenshot::factory()->forTimeEntry($timeEntry)->create();
+        Passport::actingAs($data->user);
+
+        // Act
+        $response = $this->deleteJson(route('api.v1.screenshots.destroy', [$data->organization->getKey(), $screenshot->getKey()]));
+
+        // Assert
+        $response->assertForbidden();
     }
 
     public function test_store_endpoint_fails_if_time_entry_belongs_to_different_organization(): void

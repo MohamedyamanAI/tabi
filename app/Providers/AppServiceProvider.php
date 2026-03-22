@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Nwidart\Modules\Facades\Module;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -96,7 +97,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Extensions
         $this->app->bind(IpLookupServiceContract::class, NoIpLookupService::class);
-        $this->app->bind(BillingContract::class);
+
+        // Only fall back to the stub BillingContract when the Billing module is not available.
+        if (! Module::has('Billing') || ! Module::isEnabled('Billing')) {
+            $this->app->bind(BillingContract::class);
+        }
 
         // Routing
         Route::model('member', Member::class);

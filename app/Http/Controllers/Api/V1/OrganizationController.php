@@ -9,6 +9,7 @@ use App\Http\Requests\V1\Organization\OrganizationUpdateRequest;
 use App\Http\Resources\V1\Organization\OrganizationResource;
 use App\Models\Organization;
 use App\Service\BillableRateService;
+use App\Service\BillingContract;
 use Illuminate\Auth\Access\AuthorizationException;
 
 class OrganizationController extends Controller
@@ -39,6 +40,14 @@ class OrganizationController extends Controller
     public function update(Organization $organization, OrganizationUpdateRequest $request, BillableRateService $billableRateService): OrganizationResource
     {
         $this->checkPermission($organization, 'organizations:update');
+
+        $updatesScreenshotSettings = $request->getScreenshotsEnabled() !== null
+            || $request->getScreenshotIntervalMinutes() !== null
+            || $request->getScreenshotsBlurred() !== null;
+
+        if ($updatesScreenshotSettings && app(BillingContract::class)->getTier($organization) !== 'pro') {
+            throw new AuthorizationException('Screenshot settings are only available on the Pro plan.');
+        }
 
         if ($request->getName() !== null) {
             $organization->name = $request->getName();

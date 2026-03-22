@@ -35,6 +35,11 @@ class HandleInertiaRequestsMiddlewareTest extends MiddlewareTestAbstract
             $mock->shouldReceive('hasTrial')->andReturn(false);
             $mock->shouldReceive('getTrialUntil')->andReturn(null);
             $mock->shouldReceive('isBlocked')->andReturn(false);
+            $mock->shouldReceive('getTier')->andReturn(null);
+            $mock->shouldReceive('getSeatCount')->andReturn(0);
+            $mock->shouldReceive('getUsedSeats')->andReturn(0);
+            $mock->shouldReceive('getBillingCycle')->andReturn(null);
+            $mock->shouldReceive('getCurrentPeriodEnd')->andReturn(null);
         });
         Passport::actingAs($user->user);
 
@@ -47,6 +52,7 @@ class HandleInertiaRequestsMiddlewareTest extends MiddlewareTestAbstract
             ->where('billing.has_trial', false)
             ->where('billing.trial_until', null)
             ->where('billing.is_blocked', false)
+            ->where('billing.cancel_at_period_end', false)
         );
     }
 
@@ -61,6 +67,11 @@ class HandleInertiaRequestsMiddlewareTest extends MiddlewareTestAbstract
             $mock->shouldReceive('hasTrial')->andReturn(true);
             $mock->shouldReceive('getTrialUntil')->andReturn($trialUntil);
             $mock->shouldReceive('isBlocked')->andReturn(false);
+            $mock->shouldReceive('getTier')->andReturn(null);
+            $mock->shouldReceive('getSeatCount')->andReturn(0);
+            $mock->shouldReceive('getUsedSeats')->andReturn(0);
+            $mock->shouldReceive('getBillingCycle')->andReturn(null);
+            $mock->shouldReceive('getCurrentPeriodEnd')->andReturn(null);
         });
         Passport::actingAs($user->user);
 
@@ -73,6 +84,7 @@ class HandleInertiaRequestsMiddlewareTest extends MiddlewareTestAbstract
             ->where('billing.has_trial', true)
             ->where('billing.trial_until', $trialUntil->toIso8601ZuluString())
             ->where('billing.is_blocked', false)
+            ->where('billing.cancel_at_period_end', false)
         );
     }
 }

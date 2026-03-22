@@ -8,9 +8,13 @@ use App\Models\Organization;
 use Illuminate\Support\Carbon;
 
 /**
- * This class is a contract for the billing system
- * The billing system is responsible for managing the subscriptions of organizations
- * The concrete implementation of this contract for the cloud version of solidtime is implemented in an extension
+ * Default billing implementation when the Billing module is disabled (self-hosted / no Polar).
+ *
+ * `AppServiceProvider` binds this class only when the Billing module is unavailable or not enabled.
+ * When Billing is enabled, the Billing extension replaces this binding with a real implementation
+ * that must expose the same public methods.
+ *
+ * The billing subsystem manages organization subscriptions, trials, seats, and gating.
  */
 class BillingContract
 {
@@ -53,5 +57,54 @@ class BillingContract
     public function isBlocked(Organization $organization): bool
     {
         return false;
+    }
+
+    /**
+     * Whether the organization can add another real (non-placeholder) member right now.
+     * Implementations should enforce the free-plan limit and paid member limits.
+     */
+    public function canAddMember(Organization $organization): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the tier for the organization (e.g. "standard" or "pro").
+     */
+    public function getTier(Organization $organization): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Total seat count purchased for the current billing period.
+     */
+    public function getSeatCount(Organization $organization): int
+    {
+        return 0;
+    }
+
+    /**
+     * Seats currently used by real (non-placeholder) members.
+     */
+    public function getUsedSeats(Organization $organization): int
+    {
+        return 0;
+    }
+
+    /**
+     * Billing cycle interval for the current subscription (e.g. "monthly" or "annual").
+     */
+    public function getBillingCycle(Organization $organization): ?string
+    {
+        return null;
+    }
+
+    /**
+     * When the current billing period ends.
+     */
+    public function getCurrentPeriodEnd(Organization $organization): ?Carbon
+    {
+        return null;
     }
 }

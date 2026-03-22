@@ -88,6 +88,11 @@ abstract class TestCase extends BaseTestCase
             $mock->shouldReceive('hasTrial')->andReturn(false);
             $mock->shouldReceive('getTrialUntil')->andReturn(null);
             $mock->shouldReceive('isBlocked')->andReturn(false);
+            $mock->shouldReceive('getTier')->andReturn(null);
+            $mock->shouldReceive('getSeatCount')->andReturn(0);
+            $mock->shouldReceive('getUsedSeats')->andReturn(0);
+            $mock->shouldReceive('getBillingCycle')->andReturn(null);
+            $mock->shouldReceive('getCurrentPeriodEnd')->andReturn(null);
         });
     }
 
@@ -98,6 +103,11 @@ abstract class TestCase extends BaseTestCase
             $mock->shouldReceive('hasTrial')->andReturn(false);
             $mock->shouldReceive('getTrialUntil')->andReturn(null);
             $mock->shouldReceive('isBlocked')->andReturn(false);
+            $mock->shouldReceive('getTier')->andReturn(null);
+            $mock->shouldReceive('getSeatCount')->andReturn(0);
+            $mock->shouldReceive('getUsedSeats')->andReturn(0);
+            $mock->shouldReceive('getBillingCycle')->andReturn(null);
+            $mock->shouldReceive('getCurrentPeriodEnd')->andReturn(null);
         });
     }
 }
