@@ -8,6 +8,9 @@ import MemberCombobox from '@/Components/Common/Member/MemberCombobox.vue';
 import SecondaryButton from '@/packages/ui/src/Buttons/SecondaryButton.vue';
 import { canViewAllScreenshots } from '@/utils/permissions';
 import { ref, computed } from 'vue';
+import { isAllowedToUseScreenshots, isBillingActivated } from '@/utils/billing';
+import { canManageBilling } from '@/utils/permissions';
+import { Link } from '@inertiajs/vue3';
 
 const selectedMemberId = ref('');
 
@@ -75,7 +78,9 @@ function clearMemberFilter() {
             class="py-5 border-b border-default-background-separator flex justify-between items-center">
             <PageTitle :icon="CameraIcon" title="Screenshots" />
         </MainContainer>
-        <MainContainer class="py-4 border-b border-default-background-separator">
+        <MainContainer
+            v-if="isAllowedToUseScreenshots()"
+            class="py-4 border-b border-default-background-separator">
             <div class="flex flex-wrap items-center gap-3">
                 <div v-if="canViewAllScreenshots()" class="w-56">
                     <MemberCombobox v-model="selectedMemberId" />
@@ -108,11 +113,23 @@ function clearMemberFilter() {
                 </div>
             </div>
         </MainContainer>
-        <MainContainer class="pt-6">
+        <MainContainer v-if="isAllowedToUseScreenshots()" class="pt-6">
             <ScreenshotGallery
                 :member-id="selectedMemberId || undefined"
                 :start-date="startDate"
                 :end-date="endDate" />
+        </MainContainer>
+        <MainContainer v-else class="py-10">
+            <div
+                class="mx-auto max-w-lg rounded-xl border border-border-secondary bg-card-background px-6 py-8 text-center">
+                <h3 class="text-base font-semibold text-text-primary">Pro plan required</h3>
+                <p class="mt-2 text-sm text-text-secondary">
+                    Screenshots are only available on the Pro plan.
+                </p>
+                <Link v-if="isBillingActivated() && canManageBilling()" href="/billing" class="inline-block">
+                    <SecondaryButton class="mt-4">Upgrade to Pro</SecondaryButton>
+                </Link>
+            </div>
         </MainContainer>
     </AppLayout>
 </template>

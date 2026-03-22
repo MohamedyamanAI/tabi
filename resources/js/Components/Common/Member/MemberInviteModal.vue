@@ -98,13 +98,14 @@ useFocus(clientNameInput, { initialValue: true });
                         <strong>please upgrade to a paid plan</strong>.
                     </p>
 
-                    <Link v-if="isBillingActivated() && canManageBilling()" href="/billing">
-                        <PrimaryButton
-                            v-if="isBillingActivated() && canUpdateOrganization()"
-                            type="button"
-                            class="mt-6">
-                            <CreditCardIcon class="w-5 h-5 me-2" />
-                            Go to Billing
+                    <Link
+                        v-if="isBillingActivated() && canManageBilling() && canUpdateOrganization()"
+                        href="/billing">
+                        <PrimaryButton type="button" class="mt-6 px-4 py-2 text-sm">
+                            <span class="inline-flex items-center gap-2">
+                                <CreditCardIcon class="w-4 h-4" />
+                                <span>Manage billing & members</span>
+                            </span>
                         </PrimaryButton>
                     </Link>
                 </div>
