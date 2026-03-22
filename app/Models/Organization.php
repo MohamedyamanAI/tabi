@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -78,6 +79,7 @@ class Organization extends JetstreamTeam implements AuditableContract
         'employees_can_see_billable_rates' => 'boolean',
         'employees_can_manage_tasks' => 'boolean',
         'prevent_overlapping_time_entries' => 'boolean',
+        'polar_customer_id' => 'string',
         'screenshots_enabled' => 'boolean',
         'screenshot_interval_minutes' => 'integer',
         'screenshots_blurred' => 'boolean',
@@ -98,6 +100,7 @@ class Organization extends JetstreamTeam implements AuditableContract
     protected $fillable = [
         'name',
         'personal_team',
+        'polar_customer_id',
     ];
 
     /**
@@ -127,6 +130,17 @@ class Organization extends JetstreamTeam implements AuditableContract
     public function allRealUsers(): Collection
     {
         return $this->realUsers->merge([$this->owner]);
+    }
+
+    /**
+     * Current Polar subscription (if any).
+     *
+     * @return HasOne<\Extensions\Billing\App\Models\PolarSubscription, $this>
+     */
+    public function polarSubscription(): HasOne
+    {
+        return $this->hasOne(\Extensions\Billing\App\Models\PolarSubscription::class, 'organization_id')
+            ->latest('updated_at');
     }
 
     public function hasRealUserWithEmail(string $email): bool

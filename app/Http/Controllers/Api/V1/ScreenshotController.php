@@ -11,6 +11,7 @@ use App\Http\Resources\V1\Screenshot\ScreenshotResource;
 use App\Models\Organization;
 use App\Models\Screenshot;
 use App\Models\TimeEntry;
+use App\Service\BillingContract;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
@@ -18,6 +19,16 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ScreenshotController extends Controller
 {
+    /**
+     * @throws AuthorizationException
+     */
+    protected function ensureScreenshotFeatureAvailable(Organization $organization): void
+    {
+        if (app(BillingContract::class)->getTier($organization) !== 'pro') {
+            throw new AuthorizationException('Screenshots are only available on the Pro plan.');
+        }
+    }
+
     protected function checkPermission(Organization $organization, string $permission, ?Screenshot $screenshot = null): void
     {
         parent::checkPermission($organization, $permission);
@@ -37,6 +48,8 @@ class ScreenshotController extends Controller
      */
     public function index(Organization $organization, ScreenshotIndexRequest $request): ScreenshotCollection
     {
+        $this->ensureScreenshotFeatureAvailable($organization);
+
         $canViewAll = $this->hasPermission($organization, 'screenshots:view:all');
         $canViewOwn = $this->hasPermission($organization, 'screenshots:view:own');
 
@@ -83,6 +96,7 @@ class ScreenshotController extends Controller
      */
     public function store(Organization $organization, ScreenshotStoreRequest $request): ScreenshotResource
     {
+        $this->ensureScreenshotFeatureAvailable($organization);
         $this->checkPermission($organization, 'screenshots:upload');
 
         if (! $organization->screenshots_enabled) {
@@ -133,6 +147,8 @@ class ScreenshotController extends Controller
      */
     public function show(Organization $organization, Screenshot $screenshot): ScreenshotResource
     {
+        $this->ensureScreenshotFeatureAvailable($organization);
+
         $canViewAll = $this->hasPermission($organization, 'screenshots:view:all');
         $canViewOwn = $this->hasPermission($organization, 'screenshots:view:own');
 
@@ -163,6 +179,8 @@ class ScreenshotController extends Controller
      */
     public function destroy(Organization $organization, Screenshot $screenshot): JsonResponse
     {
+        $this->ensureScreenshotFeatureAvailable($organization);
+
         if ($screenshot->organization_id !== $organization->getKey()) {
             throw new AuthorizationException('Screenshot does not belong to organization');
         }

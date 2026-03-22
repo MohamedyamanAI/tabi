@@ -10,6 +10,7 @@ use App\Exceptions\Api\EntityStillInUseApiException;
 use App\Exceptions\Api\FeatureIsNotAvailableInFreePlanApiException;
 use App\Exceptions\Api\InactiveUserCanNotBeUsedApiException;
 use App\Exceptions\Api\InvitationForTheEmailAlreadyExistsApiException;
+use App\Exceptions\Api\NoMembersAvailableApiException;
 use App\Exceptions\Api\OnlyOwnerCanChangeOwnership;
 use App\Exceptions\Api\OnlyPlaceholdersCanBeMergedIntoAnotherMember;
 use App\Exceptions\Api\OrganizationHasNoSubscriptionButMultipleMembersException;
@@ -48,6 +49,7 @@ return [
         OnlyPlaceholdersCanBeMergedIntoAnotherMember::KEY => 'Only placeholders can be merged into another member',
         ThisPlaceholderCanNotBeInvitedUseTheMergeToolInsteadException::KEY => 'This placeholder can not be invited use the merge tool instead',
         InvitationForTheEmailAlreadyExistsApiException::KEY => 'The email has already been invited to the organization. Please wait for the user to accept the invitation or resend the invitation email.',
+        NoMembersAvailableApiException::KEY => 'No member slots available. Increase your member limit to invite more members.',
         OverlappingTimeEntryApiException::KEY => 'Overlapping time entries are not allowed.',
     ],
     'unknown_error_in_admin_panel' => 'An unknown error occurred. Please check the logs.',

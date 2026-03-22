@@ -8,6 +8,7 @@ use App\Enums\Role;
 use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Models\Organization;
 use App\Service\BillableRateService;
+use App\Service\BillingContract;
 use Laravel\Passport\Passport;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -258,6 +259,61 @@ class OrganizationEndpointTest extends ApiEndpointTestAbstract
         $this->assertDatabaseHas(Organization::class, [
             'name' => $organizationFake->name,
             'billable_rate' => $organizationFake->billable_rate,
+        ]);
+    }
+
+    public function test_update_endpoint_rejects_screenshot_settings_updates_for_non_pro_tier(): void
+    {
+        // Arrange
+        $data = $this->createUserWithPermission([
+            'organizations:update',
+        ]);
+        Passport::actingAs($data->user);
+
+        // Act
+        $response = $this->putJson(route('api.v1.organizations.update', [$data->organization->getKey()]), [
+            'screenshots_enabled' => true,
+            'screenshot_interval_minutes' => 10,
+            'screenshots_blurred' => true,
+        ]);
+
+        // Assert
+        $response->assertForbidden();
+    }
+
+    public function test_update_endpoint_allows_screenshot_settings_updates_for_pro_tier(): void
+    {
+        // Arrange
+        $data = $this->createUserWithPermission([
+            'organizations:update',
+        ]);
+        $this->mock(BillingContract::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('hasSubscription')->andReturn(true);
+            $mock->shouldReceive('hasTrial')->andReturn(false);
+            $mock->shouldReceive('getTrialUntil')->andReturn(null);
+            $mock->shouldReceive('isBlocked')->andReturn(false);
+            $mock->shouldReceive('getTier')->andReturn('pro');
+            $mock->shouldReceive('getSeatCount')->andReturn(5);
+            $mock->shouldReceive('getUsedSeats')->andReturn(1);
+            $mock->shouldReceive('getBillingCycle')->andReturn('monthly');
+            $mock->shouldReceive('getCurrentPeriodEnd')->andReturn(null);
+        });
+        Passport::actingAs($data->user);
+
+        // Act
+        $response = $this->putJson(route('api.v1.organizations.update', [$data->organization->getKey()]), [
+            'screenshots_enabled' => true,
+            'screenshot_interval_minutes' => 10,
+            'screenshots_blurred' => true,
+        ]);
+
+        // Assert
+        $response->assertStatus(200);
+        $this->assertDatabaseHas(Organization::class, [
+            'id' => $data->organization->getKey(),
+            'screenshots_enabled' => true,
+            'screenshot_interval_minutes' => 10,
+            'screenshots_blurred' => true,
         ]);
     }
 }
