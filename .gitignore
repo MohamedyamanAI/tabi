@@ -26,9 +26,12 @@ yarn-error.log
 /blob-report/
 /playwright/.cache/
 /coverage
-/extensions
+# Ignore extension modules except tracked paths
+/extensions/*
 !/extensions/.gitkeep
 !/extensions/extensions_autoload.php
+!/extensions/Billing/
+!/extensions/Billing/**
 /auth.json
 /modules_statuses.json
 /k8s
