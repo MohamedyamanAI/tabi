@@ -37,7 +37,19 @@ class UserMembershipEndpointTest extends ApiEndpointTestAbstract
         $otherMemberResponse = collect($response->json('data'))->where('id', '=', $otherMember->getKey())->first();
         $this->assertNotNull($otherMemberResponse);
         $this->assertSame($otherMember->organization->getKey(), $otherMemberResponse['organization']['id']);
+        $this->assertArrayHasKey('tier', $otherMemberResponse['organization']);
+        $this->assertIsBool($otherMemberResponse['organization']['is_blocked']);
+        $this->assertIsBool($otherMemberResponse['organization']['can_add_member']);
+        $this->assertIsArray($otherMemberResponse['organization']['entitlements']);
+        $this->assertArrayHasKey('screenshots', $otherMemberResponse['organization']['entitlements']);
+        $this->assertIsBool($otherMemberResponse['organization']['entitlements']['screenshots']);
         $memberResponse = collect($response->json('data'))->where('id', '=', $data->member->getKey())->first();
         $this->assertNotNull($memberResponse);
+        $this->assertArrayHasKey('tier', $memberResponse['organization']);
+        $this->assertIsBool($memberResponse['organization']['is_blocked']);
+        $this->assertIsBool($memberResponse['organization']['can_add_member']);
+        $this->assertIsArray($memberResponse['organization']['entitlements']);
+        $this->assertArrayHasKey('screenshots', $memberResponse['organization']['entitlements']);
+        $this->assertIsBool($memberResponse['organization']['entitlements']['screenshots']);
     }
 }
