@@ -40,8 +40,6 @@ class PersonalMembershipResource extends BaseResource
                 'tier' => $tier,
                 /** @var bool $is_blocked Whether organization is blocked by billing limits */
                 'is_blocked' => $billing->isBlocked($organization),
-                /** @var bool $can_add_member Whether organization can add another real member */
-                'can_add_member' => $billing->canAddMember($organization),
                 'entitlements' => [
                     /** @var bool $screenshots Whether screenshots entitlement is available */
                     'screenshots' => $tier === 'pro',
