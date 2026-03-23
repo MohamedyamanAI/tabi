@@ -28,7 +28,12 @@ class UserMembershipController extends Controller
 
         $members = Member::query()
             ->whereBelongsTo($user, 'user')
-            ->with(['organization'])
+            ->with([
+                'organization',
+                'organization.owner',
+                'organization.realUsers',
+                'organization.polarSubscription',
+            ])
             ->get();
 
         return new PersonalMembershipCollection($members);
