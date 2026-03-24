@@ -96,6 +96,11 @@ class OrganizationController extends Controller
             $oldBillableRate = $organization->billable_rate;
             $organization->billable_rate = $request->getBillableRate();
         }
+        if ($request->hasFile('logo')) {
+            $organization->replaceLogo($request->file('logo'));
+        } elseif ($request->boolean('remove_logo')) {
+            $organization->removeStoredLogo();
+        }
         $organization->save();
 
         if ($hasBillableRate && $oldBillableRate !== $request->getBillableRate()) {

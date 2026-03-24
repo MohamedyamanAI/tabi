@@ -320,6 +320,7 @@ const OrganizationResource = z
     .object({
         id: z.string(),
         name: z.string(),
+        logo_url: z.union([z.string(), z.null()]),
         is_personal: z.boolean(),
         billable_rate: z.union([z.number(), z.null()]),
         employees_can_see_billable_rates: z.boolean(),
@@ -342,6 +343,7 @@ const OrganizationResource = z
 const OrganizationUpdateRequest = z
     .object({
         name: z.string().max(255),
+        remove_logo: z.boolean().optional(),
         billable_rate: z.union([z.number(), z.null()]),
         employees_can_see_billable_rates: z.boolean(),
         employees_can_manage_tasks: z.boolean(),

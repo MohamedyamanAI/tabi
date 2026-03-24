@@ -319,6 +319,7 @@ class JetstreamServiceProvider extends ServiceProvider
                             'id' => $teamModel->getKey(),
                             'name' => $teamModel->name,
                             'currency' => $teamModel->currency,
+                            'logo_url' => $teamModel->logo_url,
                             'owner' => [
                                 'id' => $owner->getKey(),
                                 'name' => $owner->name,

@@ -21,7 +21,7 @@ class CreateOrganization implements CreatesTeams
     /**
      * Validate and create a new team for the given user.
      *
-     * @param  array<string, string>  $input
+     * @param  array<string, mixed>  $input
      *
      * @throws AuthorizationException
      * @throws ValidationException
@@ -30,9 +30,17 @@ class CreateOrganization implements CreatesTeams
     {
         Gate::forUser($user)->authorize('create', Jetstream::newTeamModel());
 
-        Validator::make($input, [
-            'name' => ['required', 'string', 'max:255'],
-        ])->validateWithBag('createTeam');
+        $request = request();
+
+        Validator::make(
+            array_merge($input, [
+                'logo' => $request->file('logo'),
+            ]),
+            [
+                'name' => ['required', 'string', 'max:255'],
+                'logo' => ['nullable', 'image', 'max:4096'],
+            ]
+        )->validateWithBag('createTeam');
 
         $ipLookupResponse = app(IpLookupServiceContract::class)->lookup(request()->ip());
 
@@ -52,6 +60,12 @@ class CreateOrganization implements CreatesTeams
 
         // Note: The refresh is necessary for currently unknown reasons. Do not remove it.
         $organization = $organization->refresh();
+
+        if ($request->hasFile('logo')) {
+            $organization->replaceLogo($request->file('logo'));
+            $organization->save();
+        }
+
         AfterCreateOrganization::dispatch($organization);
 
         return $organization;

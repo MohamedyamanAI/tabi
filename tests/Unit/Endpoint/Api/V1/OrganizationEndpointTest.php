@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Models\Organization;
 use App\Service\BillableRateService;
 use App\Service\BillingContract;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Passport\Passport;
 use Mockery\MockInterface;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -58,6 +60,7 @@ class OrganizationEndpointTest extends ApiEndpointTestAbstract
         // Assert
         $response->assertStatus(200);
         $response->assertJsonPath('data.id', $data->organization->getKey());
+        $response->assertJsonPath('data.logo_url', null);
     }
 
     public function test_show_endpoint_shows_billable_rate_for_members_with_role_employee_if_organization_allows_it(): void
@@ -315,5 +318,48 @@ class OrganizationEndpointTest extends ApiEndpointTestAbstract
             'screenshot_interval_minutes' => 10,
             'screenshots_blurred' => true,
         ]);
+    }
+
+    public function test_update_endpoint_can_upload_organization_logo(): void
+    {
+        Storage::fake(config('filesystems.public'));
+        $data = $this->createUserWithPermission([
+            'organizations:update',
+        ]);
+        $this->assertBillableRateServiceIsUnused();
+        Passport::actingAs($data->user);
+
+        $file = UploadedFile::fake()->image('logo.png', 100, 100);
+
+        $response = $this->put(route('api.v1.organizations.update', [$data->organization->getKey()]), [
+            'logo' => $file,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertNotNull($response->json('data.logo_url'));
+        $data->organization->refresh();
+        $this->assertNotNull($data->organization->logo_path);
+        Storage::disk(config('filesystems.public'))->assertExists((string) $data->organization->logo_path);
+    }
+
+    public function test_update_endpoint_can_remove_organization_logo_via_json(): void
+    {
+        Storage::fake(config('filesystems.public'));
+        $data = $this->createUserWithPermission([
+            'organizations:update',
+        ]);
+        $this->assertBillableRateServiceIsUnused();
+        $data->organization->replaceLogo(UploadedFile::fake()->image('logo.png', 100, 100));
+        $data->organization->save();
+        Passport::actingAs($data->user);
+
+        $response = $this->putJson(route('api.v1.organizations.update', [$data->organization->getKey()]), [
+            'remove_logo' => true,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('data.logo_url', null);
+        $data->organization->refresh();
+        $this->assertNull($data->organization->logo_path);
     }
 }

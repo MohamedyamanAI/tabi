@@ -79,6 +79,15 @@ class OrganizationUpdateRequest extends BaseFormRequest
             'time_format' => [
                 Rule::enum(TimeFormat::class),
             ],
+            'logo' => [
+                'nullable',
+                'image',
+                'max:4096',
+            ],
+            'remove_logo' => [
+                'sometimes',
+                'boolean',
+            ],
         ];
     }
 
