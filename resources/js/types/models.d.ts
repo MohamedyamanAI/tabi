@@ -18,6 +18,7 @@ export interface Organization {
     id: string;
     user_id: string;
     name: string;
+    logo_url?: string | null;
     personal_team: boolean;
     currency: string;
     created_at: string | null;

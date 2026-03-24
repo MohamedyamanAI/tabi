@@ -47,6 +47,8 @@ class OrganizationResource extends BaseResource
             'id' => $this->resource->id,
             /** @var string $name Name */
             'name' => $this->resource->name,
+            /** @var string|null $logo_url Public URL for the organization logo */
+            'logo_url' => $this->resource->logo_url,
             /** @var bool $color Personal organizations automatically created after registration */
             'is_personal' => $this->resource->personal_team,
             /** @var int|null $billable_rate Billable rate in cents per hour */

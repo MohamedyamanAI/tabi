@@ -18,7 +18,7 @@ class UpdateOrganization implements UpdatesTeamNames
     /**
      * Validate and update the given team's name.
      *
-     * @param  array<string, string>  $input
+     * @param  array<string, mixed>  $input
      *
      * @throws AuthorizationException
      * @throws ValidationException
@@ -27,22 +27,39 @@ class UpdateOrganization implements UpdatesTeamNames
     {
         Gate::forUser($user)->authorize('update', $organization);
 
-        Validator::make($input, [
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-            'currency' => [
-                'required',
-                'string',
-                new CurrencyRule,
-            ],
-        ])->validateWithBag('updateTeamName');
+        $request = request();
+
+        Validator::make(
+            array_merge($input, [
+                'logo' => $request->file('logo'),
+            ]),
+            [
+                'name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                ],
+                'currency' => [
+                    'required',
+                    'string',
+                    new CurrencyRule,
+                ],
+                'logo' => ['nullable', 'image', 'max:4096'],
+                'remove_logo' => ['sometimes', 'boolean'],
+            ]
+        )->validateWithBag('updateTeamName');
 
         $organization->forceFill([
             'name' => $input['name'],
             'currency' => $input['currency'],
-        ])->save();
+        ]);
+
+        if ($request->hasFile('logo')) {
+            $organization->replaceLogo($request->file('logo'));
+        } elseif ($request->boolean('remove_logo')) {
+            $organization->removeStoredLogo();
+        }
+
+        $organization->save();
     }
 }

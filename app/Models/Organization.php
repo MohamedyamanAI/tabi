@@ -12,6 +12,7 @@ use App\Enums\TimeFormat;
 use App\Models\Concerns\CustomAuditable;
 use App\Models\Concerns\HasUuids;
 use Database\Factories\OrganizationFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -20,7 +21,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Jetstream\Events\TeamCreated;
 use Laravel\Jetstream\Events\TeamDeleted;
@@ -31,6 +34,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
 /**
  * @property string $id
  * @property string $name
+ * @property string|null $logo_path
+ * @property-read string|null $logo_url
  * @property bool $personal_team
  * @property string $currency
  * @property int|null $billable_rate
@@ -99,6 +104,7 @@ class Organization extends JetstreamTeam implements AuditableContract
      */
     protected $fillable = [
         'name',
+        'logo_path',
         'personal_team',
         'polar_customer_id',
     ];
@@ -121,6 +127,45 @@ class Organization extends JetstreamTeam implements AuditableContract
      */
     protected $attributes = [
     ];
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Organization $organization): void {
+            if ($organization->logo_path !== null) {
+                Storage::disk(config('filesystems.public'))->delete($organization->logo_path);
+            }
+        });
+    }
+
+    /**
+     * @return Attribute<string|null, never>
+     */
+    protected function logoUrl(): Attribute
+    {
+        return Attribute::get(function (): ?string {
+            return $this->logo_path !== null
+                ? Storage::disk(config('filesystems.public'))->url($this->logo_path)
+                : null;
+        });
+    }
+
+    public function replaceLogo(UploadedFile $file): void
+    {
+        $disk = config('filesystems.public');
+        if ($this->logo_path !== null) {
+            Storage::disk($disk)->delete($this->logo_path);
+        }
+        $this->logo_path = $file->store('organization-logos', $disk);
+    }
+
+    public function removeStoredLogo(): void
+    {
+        $disk = config('filesystems.public');
+        if ($this->logo_path !== null) {
+            Storage::disk($disk)->delete($this->logo_path);
+        }
+        $this->logo_path = null;
+    }
 
     /**
      * Get all the non-placeholder users of the organization including its owner.

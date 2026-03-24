@@ -73,6 +73,7 @@ class ShareInertiaData
                             'id' => $user->currentTeam->id,
                             'user_id' => $user->currentTeam->user_id,
                             'name' => $user->currentTeam->name,
+                            'logo_url' => $user->currentTeam->logo_url,
                             'personal_team' => $user->currentTeam->personal_team,
                             'currency' => $user->currentTeam->currency,
                         ] : null,
@@ -81,6 +82,7 @@ class ShareInertiaData
                             return [
                                 'id' => $organization->id,
                                 'name' => $organization->name,
+                                'logo_url' => $organization->logo_url,
                                 'personal_team' => $organization->personal_team,
                                 'currency' => $organization->currency,
                                 'membership' => [
