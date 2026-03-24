@@ -45,8 +45,14 @@ const switchToTeam = (organization: Organization) => {
             as-child>
             <button data-testid="organization_switcher">
                 <div class="flex flex-1 space-x-2 items-center w-[calc(100%-30px)]">
+                    <img
+                        v-if="page.props.auth.user.current_team.logo_url"
+                        class="h-5 w-5 flex-shrink-0 rounded-full object-cover"
+                        :src="page.props.auth.user.current_team.logo_url"
+                        alt="" />
                     <div
-                        class="rounded bg-blue-900 font-medium text-xs flex-shrink-0 text-white w-5 h-5 flex items-center justify-center">
+                        v-else
+                        class="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-900 text-xs font-medium text-white">
                         {{ page.props.auth.user.current_team.name.slice(0, 1).toUpperCase() }}
                     </div>
                     <span class="text-xs flex-1 truncate font-medium">
@@ -97,13 +103,24 @@ const switchToTeam = (organization: Organization) => {
                             <DropdownMenuItem
                                 as-child
                                 class="inline-flex gap-2.5 items-center w-full">
-                                <button type="submit">
+                                <button type="submit" class="flex items-center gap-2 w-full text-left">
                                     <CheckCircleIcon
                                         v-if="team.id == page.props.auth.user.current_team_id"
-                                        class="h-5 w-5 text-green-400" />
-                                    <ArrowRightIcon v-else class="h-5 w-5 text-icon-default" />
+                                        class="h-5 w-5 flex-shrink-0 text-green-400" />
+                                    <ArrowRightIcon v-else class="h-5 w-5 flex-shrink-0 text-icon-default" />
 
-                                    <div class="w-full truncate text-left">
+                                    <img
+                                        v-if="team.logo_url"
+                                        class="h-5 w-5 flex-shrink-0 rounded-full object-cover"
+                                        :src="team.logo_url"
+                                        alt="" />
+                                    <div
+                                        v-else
+                                        class="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-blue-900 text-[10px] font-medium text-white">
+                                        {{ team.name.slice(0, 1).toUpperCase() }}
+                                    </div>
+
+                                    <div class="w-full min-w-0 truncate">
                                         {{ team.name }}
                                     </div>
                                 </button>
