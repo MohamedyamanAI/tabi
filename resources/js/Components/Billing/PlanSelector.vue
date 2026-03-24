@@ -233,7 +233,7 @@ function submitSwap(productKey: string) {
                         class="w-full"
                         :disabled="loading || seats < minSeats"
                         @click="submitCheckout(standardProductKey)">
-                        Subscribe to Standard
+                        Start Standard trial
                     </Button>
                     <Button
                         v-else-if="billing.tier === 'pro'"
