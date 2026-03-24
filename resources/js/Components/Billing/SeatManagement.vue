@@ -99,7 +99,7 @@ const paidLabel = computed(() => {
 
         <div class="border-t border-border-secondary/80 px-6 py-5" v-else>
             <p class="text-sm text-text-secondary">
-                Subscribe to a paid plan to purchase multiple seats and manage billing here.
+                Start a paid trial to purchase multiple seats and manage billing here.
             </p>
         </div>
     </div>
