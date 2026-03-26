@@ -69,7 +69,7 @@ class BillingContract
     }
 
     /**
-     * Get the tier for the organization (e.g. "standard" or "pro").
+     * Get the tier for the organization (e.g. "track" or "monitor").
      */
     public function getTier(Organization $organization): ?string
     {

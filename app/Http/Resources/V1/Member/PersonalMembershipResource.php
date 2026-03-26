@@ -42,7 +42,7 @@ class PersonalMembershipResource extends BaseResource
                 'is_blocked' => $billing->isBlocked($organization),
                 'entitlements' => [
                     /** @var bool $screenshots Whether screenshots entitlement is available */
-                    'screenshots' => $tier === 'pro',
+                    'screenshots' => $tier === 'monitor',
                 ],
             ],
             /** @var string $role Role */

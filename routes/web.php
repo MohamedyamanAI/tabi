@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\HomeController;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Jetstream\Jetstream;
@@ -21,6 +22,62 @@ use Laravel\Jetstream\Jetstream;
 */
 
 Route::get('/', [HomeController::class, 'index']);
+
+Route::get('/time-tracking-software-for-agencies', function () {
+    return Inertia::render('LandingAgencies');
+})->name('landing.agencies');
+
+Route::get('/time-tracking-software-for-startups', function () {
+    return Inertia::render('LandingStartups');
+})->name('landing.startups');
+
+Route::get('/time-tracking-software-for-remote-teams', function () {
+    return Inertia::render('LandingRemoteTeams');
+})->name('landing.remote-teams');
+
+Route::get('/sitemap.xml', function () {
+    $urls = [
+        ['loc' => url('/'), 'changefreq' => 'weekly', 'priority' => '1.0'],
+        ['loc' => url('/login'), 'changefreq' => 'monthly', 'priority' => '0.5'],
+        ['loc' => url('/register'), 'changefreq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => url('/time-tracking-software-for-agencies'), 'changefreq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => url('/time-tracking-software-for-startups'), 'changefreq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => url('/time-tracking-software-for-remote-teams'), 'changefreq' => 'monthly', 'priority' => '0.8'],
+        ['loc' => url('/privacy-policy'), 'changefreq' => 'monthly', 'priority' => '0.3'],
+        ['loc' => url('/terms-of-service'), 'changefreq' => 'monthly', 'priority' => '0.3'],
+    ];
+
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+    foreach ($urls as $url) {
+        $xml .= '<url>';
+        $xml .= '<loc>' . $url['loc'] . '</loc>';
+        $xml .= '<changefreq>' . $url['changefreq'] . '</changefreq>';
+        $xml .= '<priority>' . $url['priority'] . '</priority>';
+        $xml .= '</url>';
+    }
+    $xml .= '</urlset>';
+
+    return new Response($xml, 200, ['Content-Type' => 'application/xml']);
+})->name('sitemap');
+
+Route::get('/robots.txt', function () {
+    $content = "User-agent: *\n";
+    $content .= "Disallow: /dashboard\n";
+    $content .= "Disallow: /time\n";
+    $content .= "Disallow: /calendar\n";
+    $content .= "Disallow: /timesheet\n";
+    $content .= "Disallow: /reporting\n";
+    $content .= "Disallow: /projects\n";
+    $content .= "Disallow: /clients\n";
+    $content .= "Disallow: /members\n";
+    $content .= "Disallow: /tags\n";
+    $content .= "Disallow: /screenshots\n";
+    $content .= "Disallow: /import\n\n";
+    $content .= 'Sitemap: ' . url('/sitemap.xml') . "\n";
+
+    return new Response($content, 200, ['Content-Type' => 'text/plain']);
+})->name('robots');
 
 Route::get('/shared-report', function () {
     return Inertia::render('SharedReport');

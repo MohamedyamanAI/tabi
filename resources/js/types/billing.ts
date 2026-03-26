@@ -3,7 +3,7 @@ export interface BillingState {
     has_trial: boolean;
     trial_until: string | null;
     is_blocked: boolean;
-    tier: 'standard' | 'pro' | null;
+    tier: 'track' | 'monitor' | null;
     seat_count: number;
     used_seats: number;
     billing_cycle: 'monthly' | 'annual' | null;
