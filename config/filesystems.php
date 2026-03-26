@@ -58,7 +58,7 @@ return [
             'region' => env('S3_REGION'),
             'bucket' => env('S3_BUCKET'),
             'url' => env('S3_URL'),
-            'temporary_url' => env('S3_URL'),
+            'temporary_url' => env('S3_TEMPORARY_URL'),
             'endpoint' => env('S3_ENDPOINT'),
             'use_path_style_endpoint' => env('S3_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => true,
