@@ -12,12 +12,12 @@ const planLabel = computed(() => {
         return 'Free';
     }
 
-    if (props.billing.tier === 'pro') {
-        return props.billing.has_trial ? 'Pro Trial' : 'Pro';
+    if (props.billing.tier === 'monitor') {
+        return props.billing.has_trial ? 'Monitor Trial' : 'Monitor';
     }
 
-    if (props.billing.tier === 'standard') {
-        return 'Standard';
+    if (props.billing.tier === 'track') {
+        return 'Track';
     }
 
     return 'Paid';

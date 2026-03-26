@@ -67,7 +67,7 @@ async function submit() {
                 </div>
                 <div class="max-w-sm text-center mx-auto py-4 text-base">
                     <p class="py-1">
-                        Screenshot capture is available on the <strong>Pro plan</strong>.
+                        Screenshot capture is available on the <strong>Monitor plan</strong>.
                     </p>
                     <p class="py-1">
                         To enable screenshot settings for your organization,

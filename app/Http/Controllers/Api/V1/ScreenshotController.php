@@ -24,8 +24,8 @@ class ScreenshotController extends Controller
      */
     protected function ensureScreenshotFeatureAvailable(Organization $organization): void
     {
-        if (app(BillingContract::class)->getTier($organization) !== 'pro') {
-            throw new AuthorizationException('Screenshots are only available on the Pro plan.');
+        if (app(BillingContract::class)->getTier($organization) !== 'monitor') {
+            throw new AuthorizationException('Screenshots are only available on the Monitor plan.');
         }
     }
 

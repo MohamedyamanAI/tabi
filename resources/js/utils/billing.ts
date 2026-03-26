@@ -52,7 +52,7 @@ export function isBlocked() {
 export function getTier() {
     const page = usePage<{
         billing: {
-            tier: 'standard' | 'pro' | null;
+            tier: 'track' | 'monitor' | null;
         };
     }>();
 
@@ -100,7 +100,7 @@ export function getCurrentPeriodEndsAt() {
 }
 
 export function isAllowedToUseScreenshots() {
-    return getTier() === 'pro';
+    return getTier() === 'monitor';
 }
 
 export function isFreePlan() {

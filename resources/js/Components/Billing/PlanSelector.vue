@@ -50,9 +50,9 @@ watch(
     }
 );
 
-const proProductKey = computed(() => (cycle.value === 'annual' ? 'pro_annual' : 'pro_monthly'));
-const standardProductKey = computed(() =>
-    cycle.value === 'annual' ? 'standard_annual' : 'standard_monthly'
+const monitorProductKey = computed(() => (cycle.value === 'annual' ? 'monitor_annual' : 'monitor_monthly'));
+const trackProductKey = computed(() =>
+    cycle.value === 'annual' ? 'track_annual' : 'track_monthly'
 );
 
 const isCurrentCycle = computed(() => {
@@ -60,12 +60,12 @@ const isCurrentCycle = computed(() => {
     return props.billing.billing_cycle === cycle.value;
 });
 
-const isCurrentStandard = computed(() => {
-    return props.billing.has_subscription && props.billing.tier === 'standard' && isCurrentCycle.value;
+const isCurrentTrack = computed(() => {
+    return props.billing.has_subscription && props.billing.tier === 'track' && isCurrentCycle.value;
 });
 
-const isCurrentPro = computed(() => {
-    return props.billing.has_subscription && props.billing.tier === 'pro' && isCurrentCycle.value;
+const isCurrentMonitor = computed(() => {
+    return props.billing.has_subscription && props.billing.tier === 'monitor' && isCurrentCycle.value;
 });
 
 function submitCheckout(productKey: string) {
@@ -130,7 +130,7 @@ function submitSwap(productKey: string) {
                     <span
                         v-if="cycle === 'annual'"
                         class="pr-2 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                        Save ~17%
+                        Save up to 67%
                     </span>
                 </div>
 
@@ -184,27 +184,27 @@ function submitSwap(productKey: string) {
                 </div>
             </div>
 
-            <!-- Standard -->
+            <!-- Track -->
             <div
                 class="flex flex-col justify-between rounded-xl border p-5"
-                :class="isCurrentStandard ? 'border-primary ring-1 ring-primary/20' : 'border-border-secondary bg-card-background'">
+                :class="isCurrentTrack ? ‘border-primary ring-1 ring-primary/20’ : ‘border-border-secondary bg-card-background’">
                 <div>
                     <div class="flex items-start justify-between gap-2">
                         <div class="text-xs font-semibold uppercase tracking-wide text-text-tertiary">
-                            Standard
+                            Track
                         </div>
                         <span
-                            v-if="isCurrentStandard"
+                            v-if="isCurrentTrack"
                             class="inline-flex shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
                             Current
                         </span>
                     </div>
                     <div class="mt-2 flex items-baseline gap-1">
                         <span class="text-3xl font-bold tracking-tight text-text-primary">{{
-                            cycle === 'monthly' ? '$3' : '$30'
+                            cycle === ‘monthly’ ? ‘$3’ : ‘$12’
                         }}</span>
                         <span class="text-sm text-text-secondary"
-                            >/member/{{ cycle === 'monthly' ? 'mo' : 'yr' }}</span
+                            >/member/{{ cycle === ‘monthly’ ? ‘mo’ : ‘yr’ }}</span
                         >
                     </div>
                     <p class="mt-2 text-xs leading-relaxed text-text-secondary">
@@ -232,35 +232,35 @@ function submitSwap(productKey: string) {
                         variant="outline"
                         class="w-full"
                         :disabled="loading || seats < minSeats"
-                        @click="submitCheckout(standardProductKey)">
-                        Start Standard trial
+                        @click="submitCheckout(trackProductKey)">
+                        Start Track trial
                     </Button>
                     <Button
-                        v-else-if="billing.tier === 'pro'"
+                        v-else-if="billing.tier === ‘monitor’"
                         variant="outline"
                         class="w-full"
-                        :disabled="loading || isCurrentStandard"
-                        @click="submitSwap(standardProductKey)">
-                        Downgrade to Standard
+                        :disabled="loading || isCurrentTrack"
+                        @click="submitSwap(trackProductKey)">
+                        Downgrade to Track
                     </Button>
-                    <template v-else-if="isCurrentStandard">
+                    <template v-else-if="isCurrentTrack">
                         <p
                             v-if="isScheduledToCancel"
                             class="text-center text-[11px] text-amber-800 dark:text-amber-200">
                             <template v-if="periodEndLabel">
-                                Subscription ends on {{ periodEndLabel }}. Resume to keep Standard.
+                                Subscription ends on {{ periodEndLabel }}. Resume to keep Track.
                             </template>
-                            <template v-else> Subscription is scheduled to cancel. Resume to keep Standard. </template>
+                            <template v-else> Subscription is scheduled to cancel. Resume to keep Track. </template>
                         </p>
                         <p v-else class="text-center text-[11px] text-text-tertiary">
-                            You’re on Standard ({{ cycle }}).
+                            You’re on Track ({{ cycle }}).
                         </p>
                         <Button
                             v-if="isScheduledToCancel"
                             variant="outline"
                             class="mt-2 w-full border-emerald-600/35 text-emerald-800 hover:bg-emerald-600/10 dark:text-emerald-200"
                             :disabled="loading"
-                            @click="emit('resume')">
+                            @click="emit(‘resume’)">
                             Resume subscription
                         </Button>
                         <Button
@@ -268,52 +268,52 @@ function submitSwap(productKey: string) {
                             variant="outline"
                             class="mt-2 w-full border-red-600/30 text-red-700 hover:bg-red-600/10"
                             :disabled="loading"
-                            @click="emit('cancel')">
+                            @click="emit(‘cancel’)">
                             Cancel at period end
                         </Button>
                     </template>
                 </div>
             </div>
 
-            <!-- Pro -->
+            <!-- Monitor -->
             <div
                 class="relative flex flex-col justify-between overflow-hidden rounded-xl border p-5 shadow-sm"
                 :class="
-                    isCurrentPro
-                        ? 'border-primary bg-accent-600/5 ring-1 ring-primary/25'
-                        : 'border-accent-600/30 bg-gradient-to-b from-accent-600/5 to-card-background'
+                    isCurrentMonitor
+                        ? ‘border-primary bg-accent-600/5 ring-1 ring-primary/25’
+                        : ‘border-accent-600/30 bg-gradient-to-b from-accent-600/5 to-card-background’
                 ">
                 <div
-                    v-if="!isCurrentPro"
+                    v-if="!isCurrentMonitor"
                     class="absolute right-3 top-3 rounded-full bg-accent-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
                     Recommended
                 </div>
                 <div>
-                    <div class="flex items-start justify-between gap-2" :class="!isCurrentPro ? 'pr-14' : ''">
+                    <div class="flex items-start justify-between gap-2" :class="!isCurrentMonitor ? ‘pr-14’ : ‘’">
                         <div class="text-xs font-semibold uppercase tracking-wide text-accent-600">
-                            Pro
+                            Monitor
                         </div>
                         <span
-                            v-if="isCurrentPro"
+                            v-if="isCurrentMonitor"
                             class="inline-flex shrink-0 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
                             Current
                         </span>
                     </div>
                     <div class="mt-2 flex items-baseline gap-1">
                         <span class="text-3xl font-bold tracking-tight text-text-primary">{{
-                            cycle === 'monthly' ? '$5' : '$50'
+                            cycle === ‘monthly’ ? ‘$5’ : ‘$36’
                         }}</span>
                         <span class="text-sm text-text-secondary"
-                            >/member/{{ cycle === 'monthly' ? 'mo' : 'yr' }}</span
+                            >/member/{{ cycle === ‘monthly’ ? ‘mo’ : ‘yr’ }}</span
                         >
                     </div>
                     <p class="mt-2 text-xs leading-relaxed text-text-secondary">
-                        Everything in Standard plus screenshot capture & management.
+                        Everything in Track plus screenshot capture & management.
                     </p>
                     <ul class="mt-4 space-y-2 text-xs text-text-secondary">
                         <li class="flex gap-2">
                             <span class="text-accent-600">✓</span>
-                            <span>Everything in Standard</span>
+                            <span>Everything in Track</span>
                         </li>
                         <li class="flex gap-2">
                             <span class="text-accent-600">✓</span>
@@ -327,34 +327,34 @@ function submitSwap(productKey: string) {
                         v-if="!billing.has_subscription"
                         class="w-full"
                         :disabled="loading || seats < minSeats"
-                        @click="submitCheckout(proProductKey)">
-                        Start Pro trial
+                        @click="submitCheckout(monitorProductKey)">
+                        Start Monitor trial
                     </Button>
                     <Button
-                        v-else-if="billing.tier === 'standard'"
+                        v-else-if="billing.tier === ‘track’"
                         class="w-full"
-                        :disabled="loading || isCurrentPro"
-                        @click="submitSwap(proProductKey)">
-                        Upgrade to Pro
+                        :disabled="loading || isCurrentMonitor"
+                        @click="submitSwap(monitorProductKey)">
+                        Upgrade to Monitor
                     </Button>
-                    <template v-else-if="isCurrentPro">
+                    <template v-else-if="isCurrentMonitor">
                         <p
                             v-if="isScheduledToCancel"
                             class="text-center text-[11px] text-amber-800 dark:text-amber-200">
                             <template v-if="periodEndLabel">
-                                Subscription ends on {{ periodEndLabel }}. Resume to keep Pro.
+                                Subscription ends on {{ periodEndLabel }}. Resume to keep Monitor.
                             </template>
-                            <template v-else> Subscription is scheduled to cancel. Resume to keep Pro. </template>
+                            <template v-else> Subscription is scheduled to cancel. Resume to keep Monitor. </template>
                         </p>
                         <p v-else class="text-center text-[11px] text-text-tertiary">
-                            You’re on Pro ({{ cycle }}).
+                            You’re on Monitor ({{ cycle }}).
                         </p>
                         <Button
                             v-if="isScheduledToCancel"
                             variant="outline"
                             class="mt-2 w-full border-emerald-600/35 text-emerald-800 hover:bg-emerald-600/10 dark:text-emerald-200"
                             :disabled="loading"
-                            @click="emit('resume')">
+                            @click="emit(‘resume’)">
                             Resume subscription
                         </Button>
                         <Button
@@ -362,7 +362,7 @@ function submitSwap(productKey: string) {
                             variant="outline"
                             class="mt-2 w-full border-red-600/30 text-red-700 hover:bg-red-600/10"
                             :disabled="loading"
-                            @click="emit('cancel')">
+                            @click="emit(‘cancel’)">
                             Cancel at period end
                         </Button>
                     </template>

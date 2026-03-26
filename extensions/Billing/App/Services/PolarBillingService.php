@@ -86,7 +86,7 @@ class PolarBillingService extends BillingContract
 
     public function hasScreenshots(Organization $organization): bool
     {
-        return $this->getTier($organization) === 'pro';
+        return $this->getTier($organization) === 'monitor';
     }
 
     public function getBillingCycle(Organization $organization): ?string

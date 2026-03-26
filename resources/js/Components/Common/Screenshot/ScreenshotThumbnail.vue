@@ -21,6 +21,7 @@ const emit = defineEmits<{
         <img
             :src="imageUrl"
             :alt="'Screenshot captured at ' + capturedAt"
+            loading="lazy"
             class="w-full aspect-video object-cover" />
         <div
             class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5">
