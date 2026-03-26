@@ -99,6 +99,7 @@ function initParticles(canvas: HTMLCanvasElement) {
 function animateParticles(canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    const context = ctx;
 
     const pushRadius = 120;
     const pushForce = 8;
@@ -108,11 +109,11 @@ function animateParticles(canvas: HTMLCanvasElement) {
     const dotColor = isDark ? 'rgba(200, 200, 200, 0.3)' : 'rgba(120, 120, 120, 0.25)';
 
     function frame() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = dotColor;
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = dotColor;
 
         for (const p of particles) {
-            ctx.globalAlpha = Math.max(0, 1 - (p.y / canvas.height) * 1.2);
+            context.globalAlpha = Math.max(0, 1 - (p.y / canvas.height) * 1.2);
 
             const dx = p.x - mouse.x;
             const dy = p.y - mouse.y;
@@ -131,11 +132,11 @@ function animateParticles(canvas: HTMLCanvasElement) {
             p.x += p.vx;
             p.y += p.vy;
 
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-            ctx.fill();
+            context.beginPath();
+            context.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            context.fill();
         }
-        ctx.globalAlpha = 1;
+        context.globalAlpha = 1;
 
         animFrame = requestAnimationFrame(frame);
     }
@@ -180,7 +181,9 @@ onMounted(() => {
 
     if (comparisonSection.value) {
         observer = new IntersectionObserver(
-            ([entry]) => {
+            (entries) => {
+                const entry = entries[0];
+                if (!entry) return;
                 navHidden.value = entry.intersectionRatio > 0.3;
             },
             { threshold: [0, 0.3, 1] }
