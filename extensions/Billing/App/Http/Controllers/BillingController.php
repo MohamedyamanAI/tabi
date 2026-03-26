@@ -64,7 +64,7 @@ class BillingController extends Controller
     public function checkout(Request $request): JsonResponse|RedirectResponse
     {
         $request->validate([
-            'product_key' => 'required|string|in:standard_monthly,standard_annual,pro_monthly,pro_annual',
+            'product_key' => 'required|string|in:track_monthly,track_annual,monitor_monthly,monitor_annual',
             'seats' => 'required|integer|min:1',
         ]);
 
@@ -184,7 +184,7 @@ class BillingController extends Controller
     public function swap(Request $request): JsonResponse
     {
         $request->validate([
-            'product_key' => 'required|string|in:standard_monthly,standard_annual,pro_monthly,pro_annual',
+            'product_key' => 'required|string|in:track_monthly,track_annual,monitor_monthly,monitor_annual',
         ]);
 
         /** @var \App\Models\User $user */

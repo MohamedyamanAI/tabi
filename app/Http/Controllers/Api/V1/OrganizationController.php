@@ -45,8 +45,8 @@ class OrganizationController extends Controller
             || $request->getScreenshotIntervalMinutes() !== null
             || $request->getScreenshotsBlurred() !== null;
 
-        if ($updatesScreenshotSettings && app(BillingContract::class)->getTier($organization) !== 'pro') {
-            throw new AuthorizationException('Screenshot settings are only available on the Pro plan.');
+        if ($updatesScreenshotSettings && app(BillingContract::class)->getTier($organization) !== 'monitor') {
+            throw new AuthorizationException('Screenshot settings are only available on the Monitor plan.');
         }
 
         if ($request->getName() !== null) {

@@ -3,8 +3,27 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+        <meta name="description" content="Powerful time tracking with screenshots, idle detection, and activity tracking. Open source and starting at $1/user/month.">
+        <meta name="robots" content="index, follow">
+        <link rel="canonical" href="{{ url()->current() }}">
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <!-- Open Graph -->
+        <meta property="og:type" content="website">
+        <meta property="og:url" content="{{ url()->current() }}">
+        <meta property="og:title" content="{{ config('app.name', 'Tabi') }}">
+        <meta property="og:description" content="Powerful time tracking with screenshots, idle detection, and activity tracking. Open source and starting at $1/user/month.">
+        <meta property="og:site_name" content="{{ config('app.name', 'Tabi') }}">
+        <meta property="og:image" content="{{ asset('images/og-image.png') }}">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="{{ asset('images/og-image.png') }}">
+        <meta name="twitter:title" content="{{ config('app.name', 'Tabi') }}">
+        <meta name="twitter:description" content="Powerful time tracking with screenshots, idle detection, and activity tracking. Open source and starting at $1/user/month.">
+
+        <title inertia>{{ config('app.name', 'Tabi') }}</title>
 
         <!-- Favicons -->
         <link rel="apple-touch-icon" sizes="180x180" href="/favicons/apple-touch-icon.png">

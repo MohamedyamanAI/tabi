@@ -122,12 +122,12 @@ function clearMemberFilter() {
         <MainContainer v-else class="py-10">
             <div
                 class="mx-auto max-w-lg rounded-xl border border-border-secondary bg-card-background px-6 py-8 text-center">
-                <h3 class="text-base font-semibold text-text-primary">Pro plan required</h3>
+                <h3 class="text-base font-semibold text-text-primary">Monitor plan required</h3>
                 <p class="mt-2 text-sm text-text-secondary">
-                    Screenshots are only available on the Pro plan.
+                    Screenshots are only available on the Monitor plan.
                 </p>
                 <Link v-if="isBillingActivated() && canManageBilling()" href="/billing" class="inline-block">
-                    <SecondaryButton class="mt-4">Upgrade to Pro</SecondaryButton>
+                    <SecondaryButton class="mt-4">Upgrade to Monitor</SecondaryButton>
                 </Link>
             </div>
         </MainContainer>

@@ -13,22 +13,22 @@ return [
     // Product IDs configured in the Polar dashboard.
     // Keys are used by the billing UI/backend.
     'products' => [
-        'standard_monthly' => env('POLAR_PRODUCT_STANDARD_MONTHLY'),
-        'standard_annual' => env('POLAR_PRODUCT_STANDARD_ANNUAL'),
-        'pro_monthly' => env('POLAR_PRODUCT_PRO_MONTHLY'),
-        'pro_annual' => env('POLAR_PRODUCT_PRO_ANNUAL'),
+        'track_monthly' => env('POLAR_PRODUCT_TRACK_MONTHLY'),
+        'track_annual' => env('POLAR_PRODUCT_TRACK_ANNUAL'),
+        'monitor_monthly' => env('POLAR_PRODUCT_MONITOR_MONTHLY'),
+        'monitor_annual' => env('POLAR_PRODUCT_MONITOR_ANNUAL'),
     ],
 
     // Tier mapping derived from product IDs above.
     // Used by PolarBillingService::getTier().
     'tiers' => [
-        'standard' => [
-            env('POLAR_PRODUCT_STANDARD_MONTHLY'),
-            env('POLAR_PRODUCT_STANDARD_ANNUAL'),
+        'track' => [
+            env('POLAR_PRODUCT_TRACK_MONTHLY'),
+            env('POLAR_PRODUCT_TRACK_ANNUAL'),
         ],
-        'pro' => [
-            env('POLAR_PRODUCT_PRO_MONTHLY'),
-            env('POLAR_PRODUCT_PRO_ANNUAL'),
+        'monitor' => [
+            env('POLAR_PRODUCT_MONITOR_MONTHLY'),
+            env('POLAR_PRODUCT_MONITOR_ANNUAL'),
         ],
     ],
 
