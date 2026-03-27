@@ -2,6 +2,7 @@ import './bootstrap';
 import '../css/app.css';
 import { createApp, h } from 'vue';
 import { createInertiaApp, usePage } from '@inertiajs/vue3';
+import '@/utils/analytics';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import { createPinia } from 'pinia';

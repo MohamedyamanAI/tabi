@@ -71,6 +71,7 @@
         "lucide-vue-next": "^0.487.0",
         "parse-duration": "^2.0.1",
         "pinia": "^3.0.0",
+        "posthog-js": "^1.364.1",
         "radix-vue": "^1.9.6",
         "reka-ui": "^2.8.0",
         "tailwind-merge": "^2.6.0",
