@@ -1,0 +1,71 @@
+# Verifies GitHub Actions secrets used at Vite build time and that PostHog accepts the project API key.
+# Run manually: Actions → "Verify PostHog" → Run workflow.
+name: Verify PostHog
+
+on:
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+jobs:
+    verify:
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+
+        steps:
+            - name: Check VITE_POSTHOG_PROJECT_TOKEN is set
+              env:
+                  VITE_POSTHOG_PROJECT_TOKEN: ${{ secrets.VITE_POSTHOG_PROJECT_TOKEN }}
+              run: |
+                  if [ -z "${VITE_POSTHOG_PROJECT_TOKEN}" ]; then
+                    echo "::error::Secret VITE_POSTHOG_PROJECT_TOKEN is missing or empty. Add it under Settings → Secrets and variables → Actions."
+                    exit 1
+                  fi
+                  echo "VITE_POSTHOG_PROJECT_TOKEN is configured (length ${#VITE_POSTHOG_PROJECT_TOKEN})."
+
+            - name: Resolve ingest host
+              id: host
+              env:
+                  VITE_POSTHOG_HOST: ${{ secrets.VITE_POSTHOG_HOST }}
+              run: |
+                  API_HOST="${VITE_POSTHOG_HOST:-https://eu.i.posthog.com}"
+                  API_HOST="${API_HOST%/}"
+                  echo "api_host=${API_HOST}" >> "$GITHUB_OUTPUT"
+                  if [ -z "${VITE_POSTHOG_HOST}" ]; then
+                    echo "VITE_POSTHOG_HOST secret unset — using default https://eu.i.posthog.com (same as analytics.ts)."
+                  else
+                    echo "Using VITE_POSTHOG_HOST from secrets."
+                  fi
+
+            - name: Ping PostHog capture API
+              env:
+                  VITE_POSTHOG_PROJECT_TOKEN: ${{ secrets.VITE_POSTHOG_PROJECT_TOKEN }}
+              run: |
+                  set -euo pipefail
+                  API_HOST="${{ steps.host.outputs.api_host }}"
+                  PAYLOAD=$(jq -n \
+                    --arg token "${VITE_POSTHOG_PROJECT_TOKEN}" \
+                    --arg distinct_id "github-actions-${{ github.repository }}/${{ github.run_id }}" \
+                    '{
+                      api_key: $token,
+                      event: "ci_posthog_verify",
+                      properties: { source: "github-actions", repository: "${{ github.repository }}" },
+                      distinct_id: $distinct_id
+                    }')
+                  HTTP_CODE=$(curl -sS -o /tmp/posthog_capture_body -w "%{http_code}" \
+                    -X POST "${API_HOST}/capture/" \
+                    -H "Content-Type: application/json" \
+                    -d "${PAYLOAD}")
+                  echo "POST ${API_HOST}/capture/ → HTTP ${HTTP_CODE}"
+                  if [ "${HTTP_CODE}" != "200" ]; then
+                    echo "::error::Expected HTTP 200 from PostHog capture, got ${HTTP_CODE}"
+                    cat /tmp/posthog_capture_body
+                    exit 1
+                  fi
+                  if ! jq -e '.status == "Ok"' /tmp/posthog_capture_body >/dev/null 2>&1; then
+                    echo "::error::Response was 200 but body was not {\"status\":\"Ok\"}; raw body:"
+                    cat /tmp/posthog_capture_body
+                    exit 1
+                  fi
+                  echo "PostHog accepted the event (status Ok)."
