@@ -1,6 +1,6 @@
 import posthog from 'posthog-js';
 
-if (import.meta.env.PROD && import.meta.env.VITE_POSTHOG_PROJECT_TOKEN) {
+if (import.meta.env.VITE_POSTHOG_PROJECT_TOKEN) {
     posthog.init(import.meta.env.VITE_POSTHOG_PROJECT_TOKEN, {
         api_host:
             import.meta.env.VITE_POSTHOG_HOST || 'https://eu.i.posthog.com',
