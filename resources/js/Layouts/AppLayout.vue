@@ -248,11 +248,7 @@ const page = usePage<{
                                 :current="route().current('screenshots')"
                                 :href="route('screenshots')"></NavigationSidebarItem>
                             <NavigationSidebarItem
-                                v-if="
-                                    canViewAppActivities() &&
-                                    organization?.activity_tracking_enabled &&
-                                    organization?.app_activity_sync_enabled
-                                "
+                                v-if="canViewAppActivities()"
                                 title="App Activity"
                                 :icon="ComputerDesktopIcon"
                                 :current="route().current('app-activity')"
