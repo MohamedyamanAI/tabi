@@ -2,11 +2,14 @@ const R2_BASE = 'https://pub-e438c5d641984ba181976c5209481fbd.r2.dev/releases/la
 
 export function getDesktopDownloadUrl(): string {
     const userAgent = window.navigator.userAgent.toLowerCase()
+    const platform = (window.navigator.platform || '').toLowerCase()
 
     const isWindows = userAgent.includes('win')
     const isMac = userAgent.includes('mac')
     const isLinux = userAgent.includes('linux')
     const isArm64 = userAgent.includes('arm64') || userAgent.includes('aarch64')
+    const isMacArm64 =
+        isMac && (isArm64 || userAgent.includes('apple silicon') || platform.includes('arm'))
 
     if (isWindows) {
         return isArm64
@@ -15,8 +18,7 @@ export function getDesktopDownloadUrl(): string {
     }
 
     if (isMac) {
-        // Universal build works on both Intel and Apple Silicon (M1/M2/M3)
-        return `${R2_BASE}/tabi-universal.dmg`
+        return isMacArm64 ? `${R2_BASE}/tabi-arm64.dmg` : `${R2_BASE}/tabi-x64.dmg`
     }
 
     if (isLinux) {
