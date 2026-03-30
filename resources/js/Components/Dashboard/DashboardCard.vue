@@ -1,6 +1,10 @@
 <template>
     <section class="flex overflow-hidden flex-col gap-1.5">
-        <CardTitle :title="title" :icon="icon"></CardTitle>
+        <CardTitle :title="title" :icon="icon">
+            <template #actions>
+                <slot name="actions"></slot>
+            </template>
+        </CardTitle>
 
         <div
             class="flex-1 flex items-stretch rounded-lg bg-card-background border border-card-border">

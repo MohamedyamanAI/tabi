@@ -83,6 +83,10 @@ class OrganizationResource extends BaseResource
             'idle_detection_enabled' => $this->resource->idle_detection_enabled,
             /** @var int $idle_threshold_minutes Idle threshold in minutes */
             'idle_threshold_minutes' => $this->resource->idle_threshold_minutes,
+            /** @var bool $activity_tracking_enabled Whether activity level tracking is enabled */
+            'activity_tracking_enabled' => $this->resource->activity_tracking_enabled,
+            /** @var bool $app_activity_sync_enabled Whether app activity is synced to the server */
+            'app_activity_sync_enabled' => $this->resource->app_activity_sync_enabled,
         ];
     }
 }

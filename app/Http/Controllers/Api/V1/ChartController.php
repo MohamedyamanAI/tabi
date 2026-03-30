@@ -187,4 +187,51 @@ class ChartController extends Controller
 
         return response()->json($weeklyHistory);
     }
+
+    /**
+     * Average activity level (0–100) for the current user this week.
+     *
+     * @operationId chartActivityLevel
+     *
+     * @response int|null
+     */
+    public function activityLevel(Organization $organization, DashboardService $dashboardService): JsonResponse
+    {
+        $this->checkPermission($organization, 'charts:view:own');
+        $user = $this->user();
+
+        $level = $dashboardService->getActivityLevelForUser($user, $organization);
+
+        return response()->json($level);
+    }
+
+    /**
+     * Per-day activity levels for the current user (last N days).
+     *
+     * @operationId chartDailyActivityLevels
+     *
+     * @response array<int, array{date: string, activity_level: int|null}>
+     */
+    public function dailyActivityLevels(Organization $organization, DashboardService $dashboardService): JsonResponse
+    {
+        $this->checkPermission($organization, 'charts:view:own');
+        $user = $this->user();
+
+        return response()->json($dashboardService->getDailyActivityLevels($user, $organization, 100));
+    }
+
+    /**
+     * Per-member activity levels for the team (current week, viewer's week boundaries).
+     *
+     * @operationId chartTeamActivityLevels
+     *
+     * @response array<int, array{member_id: string, activity_level: int, avg_keystrokes_per_min: float, avg_mouse_clicks_per_min: float}>
+     */
+    public function teamActivityLevels(Organization $organization, DashboardService $dashboardService): JsonResponse
+    {
+        $this->checkPermission($organization, 'charts:view:all');
+        $user = $this->user();
+
+        return response()->json($dashboardService->getTeamActivityLevels($user, $organization));
+    }
 }

@@ -38,7 +38,8 @@ export type IntervalFormat =
     | 'decimal'
     | 'hours-minutes'
     | 'hours-minutes-colon-separated'
-    | 'hours-minutes-seconds-colon-separated';
+    | 'hours-minutes-seconds-colon-separated'
+    | 'hours-minutes-seconds';
 export type TimeInputUnit = 'minutes' | 'hours';
 
 dayjs.extend(relativeTime);
@@ -70,6 +71,23 @@ export const firstDayIndex = computed(() => {
     return apiDayOrder.indexOf(getWeekStart());
 });
 
+/**
+ * Formats a duration in whole seconds as "Xh Ym Zs" (always includes minutes and seconds for accuracy).
+ */
+export function formatDurationHoursMinutesSeconds(totalSeconds: number): string {
+    const n = Math.max(0, Math.floor(totalSeconds));
+    const hours = Math.floor(n / 3600);
+    const minutes = Math.floor((n % 3600) / 60);
+    const seconds = n % 60;
+    const parts: string[] = [];
+    if (hours > 0) {
+        parts.push(`${hours}h`);
+    }
+    parts.push(`${minutes}m`);
+    parts.push(`${seconds}s`);
+    return parts.join(' ');
+}
+
 export function formatHumanReadableDuration(
     duration: number,
     intervalFormat?: string,
@@ -89,6 +107,8 @@ export function formatHumanReadableDuration(
             return `${hours}:${minutes.toString().padStart(2, '0')}`;
         case 'hours-minutes-seconds-colon-separated':
             return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        case 'hours-minutes-seconds':
+            return formatDurationHoursMinutesSeconds(duration);
         default:
             return `${hours}h ${minutes.toString().padStart(2, '0')}min`;
     }

@@ -1,19 +1,20 @@
 <script lang="ts" setup>
 import { useQuery } from '@tanstack/vue-query';
-import { computed } from 'vue';
+import { computed, inject, type ComputedRef } from 'vue';
 import DashboardCard from '@/Components/Dashboard/DashboardCard.vue';
 import TeamActivityCardEntry from '@/Components/Dashboard/TeamActivityCardEntry.vue';
 import { UserGroupIcon } from '@heroicons/vue/20/solid';
 import SecondaryButton from '@/packages/ui/src/Buttons/SecondaryButton.vue';
 import { getCurrentOrganizationId } from '@/utils/useUser';
-import { api } from '@/packages/api/src';
+import { api, type Organization } from '@/packages/api/src';
 import { LoadingSpinner } from '@/packages/ui/src';
 import { router } from '@inertiajs/vue3';
+import { canViewMembers } from '@/utils/permissions';
 
-// Get the organization ID using the utility function
+const organization = inject<ComputedRef<Organization>>('organization');
+
 const organizationId = computed(() => getCurrentOrganizationId());
 
-// Set up the query
 const { data: latestTeamActivity, isLoading } = useQuery({
     queryKey: ['latestTeamActivity', organizationId],
     queryFn: () => {
@@ -24,6 +25,41 @@ const { data: latestTeamActivity, isLoading } = useQuery({
         });
     },
     enabled: computed(() => !!organizationId.value),
+});
+
+const { data: teamActivityLevels } = useQuery({
+    queryKey: ['teamActivityLevels', organizationId],
+    queryFn: () =>
+        api.teamActivityLevels({
+            params: {
+                organization: organizationId.value!,
+            },
+        }),
+    enabled: computed(
+        () =>
+            !!organizationId.value &&
+            !!organization?.value?.activity_tracking_enabled &&
+            canViewMembers()
+    ),
+});
+
+const levelByMemberId = computed(() => {
+    const map = new Map<
+        string,
+        {
+            activity_level: number;
+            avg_keystrokes_per_min: number;
+            avg_mouse_clicks_per_min: number;
+        }
+    >();
+    teamActivityLevels.value?.forEach((row) => {
+        map.set(row.member_id, {
+            activity_level: row.activity_level,
+            avg_keystrokes_per_min: row.avg_keystrokes_per_min,
+            avg_mouse_clicks_per_min: row.avg_mouse_clicks_per_min,
+        });
+    });
+    return map;
 });
 </script>
 
@@ -39,7 +75,15 @@ const { data: latestTeamActivity, isLoading } = useQuery({
                 :class="latestTeamActivity.length === 4 ? 'last:border-0' : ''"
                 :name="activity.name"
                 :description="activity.description"
-                :working="activity.status"></TeamActivityCardEntry>
+                :working="activity.status"
+                :show-activity-bar="!!organization?.activity_tracking_enabled"
+                :activity-level="levelByMemberId.get(activity.member_id)?.activity_level ?? null"
+                :avg-keystrokes-per-min="
+                    levelByMemberId.get(activity.member_id)?.avg_keystrokes_per_min
+                "
+                :avg-mouse-clicks-per-min="
+                    levelByMemberId.get(activity.member_id)?.avg_mouse_clicks_per_min
+                "></TeamActivityCardEntry>
         </div>
         <div v-else class="text-center text-gray-500 py-8">No team activity found</div>
         <div

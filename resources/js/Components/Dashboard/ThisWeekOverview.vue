@@ -24,6 +24,7 @@ import { getOrganizationCurrencyString } from '@/utils/money';
 import { useQuery } from '@tanstack/vue-query';
 import { getCurrentOrganizationId } from '@/utils/useUser';
 import { api, type Organization } from '@/packages/api/src';
+import { activityLevelTextClass } from '@/utils/activityLevel';
 
 use([CanvasRenderer, BarChart, TitleComponent, GridComponent, TooltipComponent, LegendComponent]);
 
@@ -126,6 +127,27 @@ const { data: weeklyHistory } = useQuery({
     enabled: computed(() => !!organizationId.value),
     staleTime: 1000 * 30, // 30 seconds
 });
+
+const { data: weeklyActivityLevel, isPending: weeklyActivityLevelPending } = useQuery({
+    queryKey: ['weeklyActivityLevel', organizationId],
+    queryFn: () => {
+        return api.activityLevel({
+            params: {
+                organization: organizationId.value!,
+            },
+        });
+    },
+    enabled: computed(
+        () => !!organizationId.value && !!organization?.value?.activity_tracking_enabled
+    ),
+    staleTime: 1000 * 30,
+});
+
+const weeklyActivityLevelClass = computed(() =>
+    weeklyActivityLevelPending.value || weeklyActivityLevel.value == null
+        ? 'text-muted'
+        : activityLevelTextClass(weeklyActivityLevel.value)
+);
 
 const seriesData = computed(() => {
     if (!weeklyHistory.value) {
@@ -283,6 +305,15 @@ const option = computed(() => {
                           )
                         : '--'
                 " />
+            <StatCard
+                v-if="organization?.activity_tracking_enabled"
+                title="Avg Activity"
+                :value="
+                    weeklyActivityLevelPending || weeklyActivityLevel == null
+                        ? '—'
+                        : `${weeklyActivityLevel}%`
+                "
+                :value-class="weeklyActivityLevelClass" />
             <ProjectsChartCard
                 v-if="weeklyProjectOverview"
                 :weekly-project-overview="weeklyProjectOverview"></ProjectsChartCard>

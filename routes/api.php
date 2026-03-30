@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\ActivitySampleController;
 use App\Http\Controllers\Api\V1\ApiTokenController;
+use App\Http\Controllers\Api\V1\AppActivityController;
 use App\Http\Controllers\Api\V1\ChartController;
 use App\Http\Controllers\Api\V1\ClientController;
 use App\Http\Controllers\Api\V1\CurrencyController;
@@ -138,6 +140,9 @@ Route::prefix('v1')->name('v1.')->group(static function (): void {
             Route::get('/total-weekly-billable-time', [ChartController::class, 'totalWeeklyBillableTime'])->name('total-weekly-billable-time');
             Route::get('/total-weekly-billable-amount', [ChartController::class, 'totalWeeklyBillableAmount'])->name('total-weekly-billable-amount');
             Route::get('/weekly-history', [ChartController::class, 'weeklyHistory'])->name('weekly-history');
+            Route::get('/activity-level', [ChartController::class, 'activityLevel'])->name('activity-level');
+            Route::get('/daily-activity-levels', [ChartController::class, 'dailyActivityLevels'])->name('daily-activity-levels');
+            Route::get('/team-activity-levels', [ChartController::class, 'teamActivityLevels'])->name('team-activity-levels');
         });
 
         // Screenshot routes
@@ -146,6 +151,17 @@ Route::prefix('v1')->name('v1.')->group(static function (): void {
             Route::post('/screenshots', [ScreenshotController::class, 'store'])->name('store')->middleware('check-organization-blocked');
             Route::get('/screenshots/{screenshot}', [ScreenshotController::class, 'show'])->name('show');
             Route::delete('/screenshots/{screenshot}', [ScreenshotController::class, 'destroy'])->name('destroy');
+        });
+
+        Route::name('activity-samples.')->prefix('/organizations/{organization}')->group(static function (): void {
+            Route::get('/activity-samples', [ActivitySampleController::class, 'index'])->name('index');
+            Route::post('/activity-samples', [ActivitySampleController::class, 'store'])->name('store')->middleware('check-organization-blocked');
+        });
+
+        Route::name('app-activities.')->prefix('/organizations/{organization}')->group(static function (): void {
+            Route::get('/app-activities/summary', [AppActivityController::class, 'summary'])->name('summary');
+            Route::get('/app-activities', [AppActivityController::class, 'index'])->name('index');
+            Route::post('/app-activities', [AppActivityController::class, 'store'])->name('store')->middleware('check-organization-blocked');
         });
 
         // Tag routes

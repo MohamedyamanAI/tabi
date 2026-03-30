@@ -1,17 +1,27 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { TrashIcon } from '@heroicons/vue/16/solid';
 
-defineProps<{
+const props = defineProps<{
     id: string;
     imageUrl: string;
     capturedAt: string;
     canDelete: boolean;
+    activityLevel?: number | null;
 }>();
 
 const emit = defineEmits<{
     click: [];
     delete: [];
 }>();
+
+const activityDotClass = computed(() => {
+    const v = props.activityLevel;
+    if (v === null || v === undefined) return '';
+    if (v >= 70) return 'bg-green-500';
+    if (v >= 40) return 'bg-yellow-500';
+    return 'bg-red-500';
+});
 </script>
 
 <template>
@@ -24,8 +34,14 @@ const emit = defineEmits<{
             loading="lazy"
             class="w-full aspect-video object-cover" />
         <div
-            class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5">
-            <span class="text-xs text-white">{{ capturedAt }}</span>
+            class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5 flex justify-between items-end gap-2">
+            <span class="text-xs text-white truncate">{{ capturedAt }}</span>
+            <div
+                v-if="activityLevel != null"
+                class="shrink-0 text-xs font-medium px-1.5 py-0.5 rounded bg-black/60 text-white flex items-center gap-1">
+                <span>{{ activityLevel }}%</span>
+                <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="activityDotClass"></span>
+            </div>
         </div>
         <button
             v-if="canDelete"

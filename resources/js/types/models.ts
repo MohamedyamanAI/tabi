@@ -27,6 +27,8 @@ export interface Organization {
     logo_url?: string | null;
     personal_team: boolean;
     currency: string;
+    activity_tracking_enabled?: boolean;
+    app_activity_sync_enabled?: boolean;
     created_at: string | null;
     updated_at: string | null;
     // relations

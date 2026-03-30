@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Enums\Weekday;
+use App\Models\ActivitySample;
+use App\Models\Member;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\Task;
@@ -18,6 +20,11 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardService
 {
+    /**
+     * Input events per minute that map to 100% activity level.
+     */
+    private const ACTIVITY_LEVEL_EVENT_THRESHOLD = 60.0;
+
     private TimezoneService $timezoneService;
 
     public function __construct(TimezoneService $timezoneService)
@@ -462,5 +469,121 @@ class DashboardService
         }
 
         return $response;
+    }
+
+    public function getActivityLevelForUser(User $user, Organization $organization): ?int
+    {
+        $timezone = $this->timezoneService->getTimezoneFromUser($user);
+        $possibleDays = $this->daysOfThisWeek($timezone, $user->week_start);
+        $first = Carbon::createFromFormat('Y-m-d', $possibleDays->first(), $timezone);
+        $last = Carbon::createFromFormat('Y-m-d', $possibleDays->last(), $timezone);
+        if ($first === null || $last === null) {
+            throw new \RuntimeException('Invalid week boundary');
+        }
+        $rangeStart = $first->copy()->startOfDay()->utc();
+        $rangeEnd = $last->copy()->endOfDay()->utc();
+
+        $memberId = Member::query()
+            ->where('user_id', $user->getKey())
+            ->where('organization_id', $organization->getKey())
+            ->value('id');
+        if ($memberId === null) {
+            return null;
+        }
+
+        $avg = ActivitySample::query()
+            ->where('organization_id', $organization->getKey())
+            ->where('member_id', $memberId)
+            ->whereBetween('timestamp', [$rangeStart, $rangeEnd])
+            ->selectRaw(
+                'AVG(LEAST(100, ((keystrokes + mouse_clicks)::float / ?) * 100)) as level',
+                [self::ACTIVITY_LEVEL_EVENT_THRESHOLD]
+            )
+            ->value('level');
+
+        return $avg !== null ? (int) round((float) $avg) : null;
+    }
+
+    /**
+     * @return array<int, array{date: string, activity_level: int|null}>
+     */
+    public function getDailyActivityLevels(User $user, Organization $organization, int $days): array
+    {
+        $timezone = $this->timezoneService->getTimezoneFromUser($user);
+        $possibleDays = $this->lastDays($days, $timezone);
+
+        $memberId = Member::query()
+            ->where('user_id', $user->getKey())
+            ->where('organization_id', $organization->getKey())
+            ->value('id');
+
+        $result = [];
+
+        foreach ($possibleDays as $dayStr) {
+            $dayStart = Carbon::createFromFormat('Y-m-d', $dayStr, $timezone);
+            if ($dayStart === null) {
+                throw new \RuntimeException('Invalid date');
+            }
+            $rangeStart = $dayStart->copy()->startOfDay()->utc();
+            $rangeEnd = $dayStart->copy()->endOfDay()->utc();
+
+            $avg = $memberId === null ? null : ActivitySample::query()
+                ->where('organization_id', $organization->getKey())
+                ->where('member_id', $memberId)
+                ->whereBetween('timestamp', [$rangeStart, $rangeEnd])
+                ->selectRaw(
+                    'AVG(LEAST(100, ((keystrokes + mouse_clicks)::float / ?) * 100)) as level',
+                    [self::ACTIVITY_LEVEL_EVENT_THRESHOLD]
+                )
+                ->value('level');
+
+            $result[] = [
+                'date' => $dayStr,
+                'activity_level' => $avg !== null ? (int) round((float) $avg) : null,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return array<int, array{member_id: string, activity_level: int, avg_keystrokes_per_min: float, avg_mouse_clicks_per_min: float}>
+     */
+    public function getTeamActivityLevels(User $user, Organization $organization): array
+    {
+        $timezone = $this->timezoneService->getTimezoneFromUser($user);
+        $possibleDays = $this->daysOfThisWeek($timezone, $user->week_start);
+        $first = Carbon::createFromFormat('Y-m-d', $possibleDays->first(), $timezone);
+        $last = Carbon::createFromFormat('Y-m-d', $possibleDays->last(), $timezone);
+        if ($first === null || $last === null) {
+            throw new \RuntimeException('Invalid week boundary');
+        }
+        $rangeStart = $first->copy()->startOfDay()->utc();
+        $rangeEnd = $last->copy()->endOfDay()->utc();
+
+        $rows = ActivitySample::query()
+            ->where('organization_id', $organization->getKey())
+            ->whereBetween('timestamp', [$rangeStart, $rangeEnd])
+            ->groupBy('member_id')
+            ->select('member_id')
+            ->selectRaw(
+                'ROUND(AVG(LEAST(100, ((keystrokes + mouse_clicks)::float / ?) * 100)))::int as activity_level',
+                [self::ACTIVITY_LEVEL_EVENT_THRESHOLD]
+            )
+            ->selectRaw('ROUND(AVG(keystrokes::numeric), 1) as avg_keystrokes_per_min')
+            ->selectRaw('ROUND(AVG(mouse_clicks::numeric), 1) as avg_mouse_clicks_per_min')
+            ->get();
+
+        $out = [];
+        foreach ($rows as $row) {
+            $out[] = [
+                'member_id' => (string) $row->member_id,
+                'activity_level' => (int) $row->activity_level,
+                'avg_keystrokes_per_min' => (float) $row->avg_keystrokes_per_min,
+                'avg_mouse_clicks_per_min' => (float) $row->avg_mouse_clicks_per_min,
+            ];
+        }
+
+        return $out;
     }
 }

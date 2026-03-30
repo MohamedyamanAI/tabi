@@ -21,6 +21,16 @@ import BillableToggleButton from '@/packages/ui/src/Input/BillableToggleButton.v
 import { computed, ref } from 'vue';
 import TimeTrackerProjectTaskDropdown from '@/packages/ui/src/TimeTracker/TimeTrackerProjectTaskDropdown.vue';
 import { Checkbox } from '@/packages/ui/src';
+import TimeEntryActivityPopover from '@/Components/TimeEntry/TimeEntryActivityPopover.vue';
+import { getCurrentOrganizationId } from '@/utils/useUser';
+import { useOrganizationQuery } from '@/utils/useOrganizationQuery';
+
+const organizationId = computed(() => getCurrentOrganizationId());
+const { organization: orgData } = useOrganizationQuery(organizationId.value!);
+
+const isActivityEnabled = computed(() => {
+    return !!orgData.value?.activity_tracking_enabled && !!orgData.value?.app_activity_sync_enabled;
+});
 
 const props = defineProps<{
     timeEntry: TimeEntry;
@@ -167,6 +177,12 @@ async function handleDeleteTimeEntry() {
                         variant="secondary"
                         class="opacity-60 flex focus-visible:opacity-100 group-hover:opacity-100"
                         @changed="onStartStopClick"></TimeTrackerStartStop>
+                    <TimeEntryActivityPopover
+                        v-if="isActivityEnabled && timeEntry.id && organizationId"
+                        :time-entry-id="timeEntry.id"
+                        :organization-id="organizationId"
+                        :time-entry-start="timeEntry.start"
+                        :time-entry-end="timeEntry.end" />
                     <TimeEntryMoreOptionsDropdown
                         @edit="handleEdit"
                         @duplicate="duplicateTimeEntry"
@@ -216,6 +232,12 @@ async function handleDeleteTimeEntry() {
                                 variant="secondary"
                                 class="ml-2"
                                 @changed="onStartStopClick"></TimeTrackerStartStop>
+                            <TimeEntryActivityPopover
+                                v-if="isActivityEnabled && timeEntry.id && organizationId"
+                                :time-entry-id="timeEntry.id"
+                                :organization-id="organizationId"
+                                :time-entry-start="timeEntry.start"
+                                :time-entry-end="timeEntry.end" />
                             <TimeEntryMoreOptionsDropdown
                                 @edit="handleEdit"
                                 @duplicate="duplicateTimeEntry"

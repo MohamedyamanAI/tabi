@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, inject, ref, type ComputedRef } from 'vue';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query';
 import { getCurrentOrganizationId, getCurrentRole } from '@/utils/useUser';
+import type { Organization } from '@/packages/api/src';
 import ScreenshotThumbnail from './ScreenshotThumbnail.vue';
 import DialogModal from '@/packages/ui/src/DialogModal.vue';
 import SecondaryButton from '@/packages/ui/src/Buttons/SecondaryButton.vue';
@@ -31,9 +32,53 @@ interface ScreenshotResponse {
     meta: Record<string, unknown>;
 }
 
+interface ActivitySampleRow {
+    id: string;
+    timestamp: string;
+    keystrokes: number;
+    mouse_clicks: number;
+    time_entry_id: string;
+    member_id: string;
+}
+
+interface ActivitySamplesResponse {
+    data: ActivitySampleRow[];
+    links: Record<string, string | null>;
+    meta: Record<string, unknown>;
+}
+
+const ACTIVITY_EVENT_THRESHOLD = 60;
+
+function activityPercentFromCounts(keystrokes: number, mouseClicks: number): number {
+    return Math.min(
+        100,
+        Math.round(((keystrokes + mouseClicks) / ACTIVITY_EVENT_THRESHOLD) * 100)
+    );
+}
+
+function activityLevelForCapturedAt(
+    capturedAt: string,
+    samples: ActivitySampleRow[]
+): number | null {
+    const cap = new Date(capturedAt).getTime();
+    let best: { diff: number; level: number } | null = null;
+    for (const s of samples) {
+        const t = new Date(s.timestamp).getTime();
+        const diff = Math.abs(t - cap);
+        if (diff <= 2 * 60 * 1000) {
+            const level = activityPercentFromCounts(s.keystrokes, s.mouse_clicks);
+            if (!best || diff < best.diff) {
+                best = { diff, level };
+            }
+        }
+    }
+    return best?.level ?? null;
+}
+
 const queryClient = useQueryClient();
 const organizationId = computed(() => getCurrentOrganizationId());
 const role = computed(() => getCurrentRole());
+const organization = inject<ComputedRef<Organization>>('organization');
 
 const canDelete = computed(() => {
     return ['owner', 'admin', 'manager'].includes(role.value ?? '');
@@ -69,29 +114,53 @@ const queryKey = computed(() => [
     props.endDate,
 ]);
 
+async function apiFetchJson<T>(url: string): Promise<T> {
+    const response = await fetch(url, {
+        headers: {
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-XSRF-TOKEN':
+                decodeURIComponent(
+                    document.cookie
+                        .split('; ')
+                        .find((row) => row.startsWith('XSRF-TOKEN='))
+                        ?.split('=')[1] ?? ''
+                ),
+        },
+    });
+    if (!response.ok) {
+        throw new Error('Request failed');
+    }
+    return response.json();
+}
+
 const { data: screenshotsData, isLoading } = useQuery<ScreenshotResponse>({
     queryKey,
     queryFn: async () => {
         const url = `/api/v1/organizations/${organizationId.value}/screenshots${queryParams.value ? '?' + queryParams.value : ''}`;
-        const response = await fetch(url, {
-            headers: {
-                Accept: 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-XSRF-TOKEN':
-                    decodeURIComponent(
-                        document.cookie
-                            .split('; ')
-                            .find((row) => row.startsWith('XSRF-TOKEN='))
-                            ?.split('=')[1] ?? ''
-                    ),
-            },
-        });
-        if (!response.ok) {
-            throw new Error('Failed to fetch screenshots');
-        }
-        return response.json();
+        return apiFetchJson<ScreenshotResponse>(url);
     },
     enabled: computed(() => !!organizationId.value),
+});
+
+const activitySamplesQueryKey = computed(() => [
+    'activitySamples',
+    organizationId.value,
+    props.timeEntryId,
+    props.memberId,
+    props.startDate,
+    props.endDate,
+]);
+
+const { data: activitySamplesData } = useQuery<ActivitySamplesResponse>({
+    queryKey: activitySamplesQueryKey,
+    queryFn: async () => {
+        const url = `/api/v1/organizations/${organizationId.value}/activity-samples${queryParams.value ? '?' + queryParams.value : ''}`;
+        return apiFetchJson<ActivitySamplesResponse>(url);
+    },
+    enabled: computed(
+        () => !!organizationId.value && !!organization?.value?.activity_tracking_enabled
+    ),
 });
 
 const deleteMutation = useMutation({
@@ -118,6 +187,7 @@ const deleteMutation = useMutation({
     },
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['screenshots'] });
+        queryClient.invalidateQueries({ queryKey: ['activitySamples'] });
         showDeleteConfirm.value = false;
         if (selectedScreenshot.value?.id === screenshotToDelete.value?.id) {
             selectedScreenshot.value = null;
@@ -127,6 +197,19 @@ const deleteMutation = useMutation({
 });
 
 const screenshots = computed(() => screenshotsData.value?.data ?? []);
+
+const activitySamples = computed(() => activitySamplesData.value?.data ?? []);
+
+const activityLevelByScreenshotId = computed(() => {
+    const map = new Map<string, number>();
+    for (const shot of screenshots.value) {
+        const level = activityLevelForCapturedAt(shot.captured_at, activitySamples.value);
+        if (level !== null) {
+            map.set(shot.id, level);
+        }
+    }
+    return map;
+});
 
 interface DateGroup {
     label: string;
@@ -199,6 +282,7 @@ function executeDelete() {
                         :image-url="screenshot.image_url"
                         :captured-at="formatCapturedAt(screenshot.captured_at)"
                         :can-delete="canDelete"
+                        :activity-level="activityLevelByScreenshotId.get(screenshot.id) ?? null"
                         @click="openScreenshot(screenshot)"
                         @delete="confirmDelete(screenshot)" />
                 </div>
@@ -223,11 +307,20 @@ function executeDelete() {
                 </div>
             </template>
             <template #content>
-                <img
-                    v-if="selectedScreenshot"
-                    :src="selectedScreenshot.image_url"
-                    alt="Screenshot"
-                    class="w-full rounded-lg" />
+                <div v-if="selectedScreenshot">
+                    <img
+                        :src="selectedScreenshot.image_url"
+                        alt="Screenshot"
+                        class="w-full rounded-lg" />
+                    <p
+                        v-if="activityLevelByScreenshotId.get(selectedScreenshot.id) != null"
+                        class="mt-3 text-sm text-text-secondary">
+                        Activity at capture:
+                        <span class="font-medium text-text-primary"
+                            >{{ activityLevelByScreenshotId.get(selectedScreenshot.id) }}%</span
+                        >
+                    </p>
+                </div>
             </template>
             <template #footer>
                 <SecondaryButton @click="selectedScreenshot = null"> Close </SecondaryButton>
