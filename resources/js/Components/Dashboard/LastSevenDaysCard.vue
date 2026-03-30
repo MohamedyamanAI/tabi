@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query';
-import { computed } from 'vue';
+import { computed, inject, type ComputedRef } from 'vue';
 import DashboardCard from '@/Components/Dashboard/DashboardCard.vue';
 import DayOverviewCardEntry from '@/Components/Dashboard/DayOverviewCardEntry.vue';
 import { CalendarIcon } from '@heroicons/vue/20/solid';
 import { getCurrentOrganizationId } from '@/utils/useUser';
-import { api } from '@/packages/api/src';
+import { api, type Organization } from '@/packages/api/src';
 import { LoadingSpinner } from '@/packages/ui/src';
+
+const organization = inject<ComputedRef<Organization>>('organization');
 
 // Get the organization ID using the utility function
 const organizationId = computed(() => getCurrentOrganizationId());
@@ -28,6 +30,27 @@ const { data: last7Days, isLoading } = useQuery({
         history: Array(8).fill(0) as number[],
     })),
 });
+
+const { data: dailyActivityLevels } = useQuery({
+    queryKey: ['dailyActivityLevels', organizationId],
+    queryFn: () =>
+        api.dailyActivityLevels({
+            params: {
+                organization: organizationId.value!,
+            },
+        }),
+    enabled: computed(
+        () => !!organizationId.value && !!organization?.value?.activity_tracking_enabled
+    ),
+});
+
+const activityLevelByDate = computed(() => {
+    const map = new Map<string, number | null>();
+    dailyActivityLevels.value?.forEach((row) => {
+        map.set(row.date, row.activity_level);
+    });
+    return map;
+});
 </script>
 
 <template>
@@ -42,7 +65,9 @@ const { data: last7Days, isLoading } = useQuery({
                 :class="last7Days.length === 7 ? 'last:border-0 first:pt-3' : ''"
                 :date="day.date"
                 :history="day.history"
-                :duration="day.duration"></DayOverviewCardEntry>
+                :duration="day.duration"
+                :show-activity-level="!!organization?.activity_tracking_enabled"
+                :activity-level="activityLevelByDate.get(day.date) ?? null"></DayOverviewCardEntry>
         </div>
         <div v-else class="text-center text-gray-500 py-8">No data available</div>
     </DashboardCard>

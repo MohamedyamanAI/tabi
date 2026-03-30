@@ -5,11 +5,43 @@ declare(strict_types=1);
 namespace Tests\Unit\Endpoint\Api\V1;
 
 use App\Enums\Role;
+use App\Service\BillingContract;
 use Laravel\Passport\Passport;
+use Mockery\MockInterface;
 use Tests\Unit\Endpoint\Web\EndpointTestAbstract;
 
 class ChartEndpointTest extends EndpointTestAbstract
 {
+    private function mockMonitorTier(): void
+    {
+        $this->mock(BillingContract::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('hasSubscription')->andReturn(true);
+            $mock->shouldReceive('hasTrial')->andReturn(false);
+            $mock->shouldReceive('getTrialUntil')->andReturn(null);
+            $mock->shouldReceive('isBlocked')->andReturn(false);
+            $mock->shouldReceive('getTier')->andReturn('monitor');
+            $mock->shouldReceive('getSeatCount')->andReturn(5);
+            $mock->shouldReceive('getUsedSeats')->andReturn(1);
+            $mock->shouldReceive('getBillingCycle')->andReturn('monthly');
+            $mock->shouldReceive('getCurrentPeriodEnd')->andReturn(null);
+        });
+    }
+
+    private function mockStandardTier(): void
+    {
+        $this->mock(BillingContract::class, function (MockInterface $mock): void {
+            $mock->shouldReceive('hasSubscription')->andReturn(true);
+            $mock->shouldReceive('hasTrial')->andReturn(false);
+            $mock->shouldReceive('getTrialUntil')->andReturn(null);
+            $mock->shouldReceive('isBlocked')->andReturn(false);
+            $mock->shouldReceive('getTier')->andReturn('standard');
+            $mock->shouldReceive('getSeatCount')->andReturn(5);
+            $mock->shouldReceive('getUsedSeats')->andReturn(1);
+            $mock->shouldReceive('getBillingCycle')->andReturn('monthly');
+            $mock->shouldReceive('getCurrentPeriodEnd')->andReturn(null);
+        });
+    }
+
     public function test_weekly_project_overview_endpoint_fails_if_user_has_no_permission_to_view_chart(): void
     {
         // Arrange
@@ -298,6 +330,84 @@ class ChartEndpointTest extends EndpointTestAbstract
         ]));
 
         // Assert
+        $response->assertOk();
+    }
+
+    public function test_activity_level_ok_on_standard_tier(): void
+    {
+        $this->mockStandardTier();
+        $user = $this->createUserWithPermission(['charts:view:own']);
+        Passport::actingAs($user->user);
+
+        $response = $this->getJson(route('api.v1.charts.activity-level', [
+            'organization' => $user->organization,
+        ]));
+
+        $response->assertOk();
+    }
+
+    public function test_activity_level_returns_data_on_monitor_tier(): void
+    {
+        $this->mockMonitorTier();
+        $user = $this->createUserWithPermission(['charts:view:own']);
+        Passport::actingAs($user->user);
+
+        $response = $this->getJson(route('api.v1.charts.activity-level', [
+            'organization' => $user->organization,
+        ]));
+
+        $response->assertOk();
+    }
+
+    public function test_daily_activity_levels_ok_on_standard_tier(): void
+    {
+        $this->mockStandardTier();
+        $user = $this->createUserWithPermission(['charts:view:own']);
+        Passport::actingAs($user->user);
+
+        $response = $this->getJson(route('api.v1.charts.daily-activity-levels', [
+            'organization' => $user->organization,
+        ]));
+
+        $response->assertOk();
+    }
+
+    public function test_daily_activity_levels_returns_data_on_monitor_tier(): void
+    {
+        $this->mockMonitorTier();
+        $user = $this->createUserWithPermission(['charts:view:own']);
+        Passport::actingAs($user->user);
+
+        $response = $this->getJson(route('api.v1.charts.daily-activity-levels', [
+            'organization' => $user->organization,
+        ]));
+
+        $response->assertOk();
+    }
+
+    public function test_team_activity_levels_ok_on_standard_tier(): void
+    {
+        $this->mockStandardTier();
+        $user = $this->createUserWithPermission(['charts:view:all']);
+        Passport::actingAs($user->user);
+
+        $response = $this->getJson(route('api.v1.charts.team-activity-levels', [
+            'organization' => $user->organization,
+        ]));
+
+        $response->assertOk();
+    }
+
+    public function test_team_activity_levels_returns_data_on_monitor_tier(): void
+    {
+        $this->mockMonitorTier();
+        $user = $this->createUserWithPermission(['charts:view:all']);
+        Passport::actingAs($user->user);
+
+        $response = $this->getJson(route('api.v1.charts.team-activity-levels', [
+            'organization' => $user->organization,
+        ]));
+
         $response->assertOk();
     }
 }

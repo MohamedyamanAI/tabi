@@ -143,11 +143,28 @@ function prefetchDashboard(queryClient: QueryClient) {
         staleTime: 30000,
     });
 
+    queryClient.prefetchQuery({
+        queryKey: ['weeklyActivityLevel', organizationId],
+        queryFn: () => api.activityLevel({ params: { organization: organizationId } }),
+        staleTime: 30000,
+    });
+
+    queryClient.prefetchQuery({
+        queryKey: ['dailyActivityLevels', organizationId],
+        queryFn: () => api.dailyActivityLevels({ params: { organization: organizationId } }),
+        staleTime: 30000,
+    });
+
     // Prefetch team activity only if user has permission
     if (canViewMembers()) {
         queryClient.prefetchQuery({
             queryKey: ['latestTeamActivity', organizationId],
             queryFn: () => api.latestTeamActivity({ params: { organization: organizationId } }),
+            staleTime: 30000,
+        });
+        queryClient.prefetchQuery({
+            queryKey: ['teamActivityLevels', organizationId],
+            queryFn: () => api.teamActivityLevels({ params: { organization: organizationId } }),
             staleTime: 30000,
         });
     }

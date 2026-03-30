@@ -28,10 +28,11 @@ import { LoadingSpinner } from '@/packages/ui/src';
 
 const organization = inject<ComputedRef<Organization>>('organization');
 
-// Get the organization ID using the utility function
 const organizationId = computed(() => getCurrentOrganizationId());
 
-const { data: dailyHoursTracked, isLoading } = useQuery({
+const heatmapMode = ref<'hours' | 'activity'>('hours');
+
+const { data: dailyHoursTracked, isLoading: isLoadingHours } = useQuery({
     queryKey: ['dailyTrackedHours', organizationId],
     queryFn: () => {
         return api.dailyTrackedHours({
@@ -42,6 +43,25 @@ const { data: dailyHoursTracked, isLoading } = useQuery({
     },
     enabled: computed(() => !!organizationId.value),
 });
+
+const { data: dailyActivityLevels, isLoading: isLoadingActivity } = useQuery({
+    queryKey: ['dailyActivityLevels', organizationId],
+    queryFn: () =>
+        api.dailyActivityLevels({
+            params: {
+                organization: organizationId.value!,
+            },
+        }),
+    enabled: computed(
+        () => !!organizationId.value && !!organization?.value?.activity_tracking_enabled
+    ),
+});
+
+const isLoading = computed(() =>
+    heatmapMode.value === 'hours' ? isLoadingHours.value : isLoadingActivity.value
+);
+
+const showModeToggle = computed(() => !!organization?.value?.activity_tracking_enabled);
 
 use([
     TitleComponent,
@@ -54,12 +74,11 @@ use([
 
 provide(THEME_KEY, 'dark');
 
-const max = computed(() => {
-    if (!isLoading.value && dailyHoursTracked.value) {
+const maxHours = computed(() => {
+    if (!isLoadingHours.value && dailyHoursTracked.value) {
         return Math.max(Math.max(...dailyHoursTracked.value.map((el) => el.duration)), 1);
-    } else {
-        return 1;
     }
+    return 1;
 });
 
 const backgroundColor = useCssVariable('--theme-color-card-background');
@@ -77,32 +96,89 @@ const chartColor = computed(() => {
     return `rgb(${chartColorRaw.value})`;
 });
 
-// Track chart container size
 const chartContainer = ref<HTMLElement | null>(null);
 const { width: containerWidth } = useElementSize(chartContainer);
 
-// Calculate number of weeks based on available width
-// Rough estimate: 40px per cell + 80px for labels = ~360px for 7 weeks
 const numberOfWeeks = computed(() => {
     const availableWidth = containerWidth.value || 400;
-    const minCellSize = 25; // Minimum cell size in pixels
-    const labelSpace = 80; // Space for day labels
+    const minCellSize = 25;
+    const labelSpace = 80;
     const usableWidth = availableWidth - labelSpace;
     const maxWeeks = Math.floor(usableWidth / minCellSize);
-    // Clamp between 4 and 12 weeks for reasonable display
     return Math.max(4, Math.min(12, maxWeeks));
 });
 
-// Calculate date range based on dynamic number of weeks
 const dateRange = computed(() => {
     const today = getDayJsInstance()();
     const startOfWeek = today.startOf('week');
-    // Go back (numberOfWeeks - 1) weeks from the start of current week
     const rangeStart = startOfWeek.subtract(numberOfWeeks.value - 1, 'week');
     return [today.format('YYYY-MM-DD'), rangeStart.format('YYYY-MM-DD')];
 });
 
+const heatmapSeriesData = computed(() => {
+    if (heatmapMode.value === 'hours') {
+        return dailyHoursTracked?.value?.map((el) => [el.date, el.duration]) ?? [];
+    }
+    return dailyActivityLevels?.value?.map((el) => [el.date, el.activity_level ?? 0]) ?? [];
+});
+
+const activityMax = computed(() => {
+    const rows = dailyActivityLevels.value ?? [];
+    if (rows.length === 0) return 100;
+    const m = Math.max(...rows.map((r) => r.activity_level ?? 0), 1);
+    return Math.min(100, m);
+});
+
+const effectiveMax = computed(() =>
+    heatmapMode.value === 'hours' ? maxHours.value : Math.max(activityMax.value, 1)
+);
+
 const option = computed(() => {
+    const maxVal = effectiveMax.value;
+    const empty = chartEmptyColor.value;
+    const bright = chartColor.value;
+
+    const pieces =
+        heatmapMode.value === 'hours'
+            ? [
+                  { value: 0, color: empty },
+                  {
+                      gt: 0,
+                      lte: maxVal * 0.25,
+                      color: chroma.mix(empty, bright, 0.3).hex(),
+                  },
+                  {
+                      gt: maxVal * 0.25,
+                      lte: maxVal * 0.5,
+                      color: chroma.mix(empty, bright, 0.6).hex(),
+                  },
+                  {
+                      gt: maxVal * 0.5,
+                      lte: maxVal * 0.75,
+                      color: chroma.mix(empty, bright, 0.8).hex(),
+                  },
+                  { gt: maxVal * 0.75, lte: maxVal, color: bright },
+              ]
+            : [
+                  { value: 0, color: empty },
+                  {
+                      gt: 0,
+                      lte: 25,
+                      color: chroma.mix(empty, bright, 0.3).hex(),
+                  },
+                  {
+                      gt: 25,
+                      lte: 50,
+                      color: chroma.mix(empty, bright, 0.55).hex(),
+                  },
+                  {
+                      gt: 50,
+                      lte: 75,
+                      color: chroma.mix(empty, bright, 0.75).hex(),
+                  },
+                  { gt: 75, lte: 100, color: bright },
+              ];
+
     return {
         tooltip: {},
         visualMap: {
@@ -110,25 +186,7 @@ const option = computed(() => {
             orient: 'horizontal',
             left: 'center',
             top: 'center',
-            pieces: [
-                { value: 0, color: chartEmptyColor.value },
-                {
-                    gt: 0,
-                    lte: max.value * 0.25,
-                    color: chroma.mix(chartEmptyColor.value, chartColor.value, 0.3).hex(),
-                },
-                {
-                    gt: max.value * 0.25,
-                    lte: max.value * 0.5,
-                    color: chroma.mix(chartEmptyColor.value, chartColor.value, 0.6).hex(),
-                },
-                {
-                    gt: max.value * 0.5,
-                    lte: max.value * 0.75,
-                    color: chroma.mix(chartEmptyColor.value, chartColor.value, 0.8).hex(),
-                },
-                { gt: max.value * 0.75, lte: max.value, color: chartColor.value },
-            ],
+            pieces,
             show: false,
         },
         calendar: {
@@ -161,7 +219,7 @@ const option = computed(() => {
         series: {
             type: 'heatmap',
             coordinateSystem: 'calendar',
-            data: dailyHoursTracked?.value?.map((el) => [el.date, el.duration]) ?? [],
+            data: heatmapSeriesData.value,
             itemStyle: {
                 borderRadius: 5,
                 borderColor: borderColor.value,
@@ -169,37 +227,74 @@ const option = computed(() => {
             },
             tooltip: {
                 valueFormatter: (value: number, dataIndex: number) => {
-                    if (dailyHoursTracked?.value) {
-                        return (
-                            formatDate(
-                                dailyHoursTracked?.value[dataIndex]?.date ?? '',
-                                organization?.value?.date_format
-                            ) +
-                            ': ' +
-                            formatHumanReadableDuration(
-                                value,
-                                organization?.value?.interval_format,
-                                organization?.value?.number_format
-                            )
-                        );
-                    } else {
+                    const dateStr = heatmapSeriesData.value[dataIndex]?.[0];
+                    const dateLabel = formatDate(
+                        typeof dateStr === 'string' ? dateStr : '',
+                        organization?.value?.date_format
+                    );
+                    if (heatmapMode.value === 'hours') {
+                        if (dailyHoursTracked?.value) {
+                            return (
+                                dateLabel +
+                                ': ' +
+                                formatHumanReadableDuration(
+                                    value,
+                                    organization?.value?.interval_format,
+                                    organization?.value?.number_format
+                                )
+                            );
+                        }
                         return '';
                     }
+                    return `${dateLabel} — Activity: ${Math.round(value)}%`;
                 },
             },
         },
         backgroundColor: 'transparent',
     };
 });
+
+const chartReady = computed(() => {
+    if (heatmapMode.value === 'hours') {
+        return dailyHoursTracked.value !== undefined;
+    }
+    return dailyActivityLevels.value !== undefined;
+});
 </script>
 
 <template>
     <DashboardCard title="Activity Graph" :icon="BoltIcon">
+        <template v-if="showModeToggle" #actions>
+            <div class="flex rounded-md border border-card-border bg-card-background text-xs font-medium">
+                <button
+                    type="button"
+                    class="px-2 py-1 rounded-l-md transition-colors"
+                    :class="
+                        heatmapMode === 'hours'
+                            ? 'bg-card-background text-text-primary border-r border-card-border'
+                            : 'text-text-secondary hover:text-text-primary'
+                    "
+                    @click="heatmapMode = 'hours'">
+                    Hours
+                </button>
+                <button
+                    type="button"
+                    class="px-2 py-1 rounded-r-md transition-colors"
+                    :class="
+                        heatmapMode === 'activity'
+                            ? 'bg-card-background text-text-primary'
+                            : 'text-text-secondary hover:text-text-primary'
+                    "
+                    @click="heatmapMode = 'activity'">
+                    Activity
+                </button>
+            </div>
+        </template>
         <div class="px-2">
             <div v-if="isLoading" class="flex justify-center items-center h-40">
                 <LoadingSpinner />
             </div>
-            <div v-else-if="dailyHoursTracked" ref="chartContainer">
+            <div v-else-if="chartReady" ref="chartContainer">
                 <v-chart
                     class="chart"
                     :autoresize="true"

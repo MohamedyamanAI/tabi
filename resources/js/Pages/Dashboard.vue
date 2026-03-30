@@ -23,6 +23,9 @@ const refreshDashboardData = () => {
     queryClient.invalidateQueries({ queryKey: ['totalWeeklyBillableTime'] });
     queryClient.invalidateQueries({ queryKey: ['totalWeeklyBillableAmount'] });
     queryClient.invalidateQueries({ queryKey: ['weeklyHistory'] });
+    queryClient.invalidateQueries({ queryKey: ['weeklyActivityLevel'] });
+    queryClient.invalidateQueries({ queryKey: ['dailyActivityLevels'] });
+    queryClient.invalidateQueries({ queryKey: ['teamActivityLevels'] });
     queryClient.invalidateQueries({ queryKey: ['timeEntries'] });
 };
 </script>

@@ -149,6 +149,12 @@ class JetstreamServiceProvider extends ServiceProvider
             'screenshots:upload',
             'screenshots:delete:own',
             'screenshots:delete:all',
+            'activity-samples:view:own',
+            'activity-samples:view:all',
+            'activity-samples:upload',
+            'app-activities:view:own',
+            'app-activities:view:all',
+            'app-activities:upload',
         ])->description('Owner users can perform any action. There is only one owner per organization.');
 
         Jetstream::role(Role::Admin->value, 'Administrator', [
@@ -218,6 +224,12 @@ class JetstreamServiceProvider extends ServiceProvider
             'screenshots:upload',
             'screenshots:delete:own',
             'screenshots:delete:all',
+            'activity-samples:view:own',
+            'activity-samples:view:all',
+            'activity-samples:upload',
+            'app-activities:view:own',
+            'app-activities:view:all',
+            'app-activities:upload',
         ])->description('Administrator users can perform any action, except accessing the billing dashboard.');
 
         Jetstream::role(Role::Manager->value, 'Manager', [
@@ -276,6 +288,12 @@ class JetstreamServiceProvider extends ServiceProvider
             'screenshots:upload',
             'screenshots:delete:own',
             'screenshots:delete:all',
+            'activity-samples:view:own',
+            'activity-samples:view:all',
+            'activity-samples:upload',
+            'app-activities:view:own',
+            'app-activities:view:all',
+            'app-activities:upload',
         ])->description('Managers have full access to all projects, time entries, ect. but cannot manage the organization (add/remove member, edit the organization, ect.).');
 
         Jetstream::role(Role::Employee->value, 'Employee', [
@@ -292,6 +310,10 @@ class JetstreamServiceProvider extends ServiceProvider
             'screenshots:view:own',
             'screenshots:upload',
             'screenshots:delete:own',
+            'activity-samples:view:own',
+            'activity-samples:upload',
+            'app-activities:view:own',
+            'app-activities:upload',
         ])->description('Employees have the ability to read, create, and update their own time entries, they can see the projects that they are members of and the clients they are assigned to.');
 
         Jetstream::role(Role::Placeholder->value, 'Placeholder', [

@@ -51,9 +51,9 @@ Route::get('/sitemap.xml', function () {
     $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
     foreach ($urls as $url) {
         $xml .= '<url>';
-        $xml .= '<loc>' . $url['loc'] . '</loc>';
-        $xml .= '<changefreq>' . $url['changefreq'] . '</changefreq>';
-        $xml .= '<priority>' . $url['priority'] . '</priority>';
+        $xml .= '<loc>'.$url['loc'].'</loc>';
+        $xml .= '<changefreq>'.$url['changefreq'].'</changefreq>';
+        $xml .= '<priority>'.$url['priority'].'</priority>';
         $xml .= '</url>';
     }
     $xml .= '</urlset>';
@@ -73,8 +73,9 @@ Route::get('/robots.txt', function () {
     $content .= "Disallow: /members\n";
     $content .= "Disallow: /tags\n";
     $content .= "Disallow: /screenshots\n";
+    $content .= "Disallow: /app-activity\n";
     $content .= "Disallow: /import\n\n";
-    $content .= 'Sitemap: ' . url('/sitemap.xml') . "\n";
+    $content .= 'Sitemap: '.url('/sitemap.xml')."\n";
 
     return new Response($content, 200, ['Content-Type' => 'text/plain']);
 })->name('robots');
@@ -142,6 +143,10 @@ Route::middleware([
     Route::get('/screenshots', function () {
         return Inertia::render('Screenshots');
     })->name('screenshots');
+
+    Route::get('/app-activity', function () {
+        return Inertia::render('AppActivity');
+    })->name('app-activity');
 
     Route::get('/import', function () {
         return Inertia::render('Import');

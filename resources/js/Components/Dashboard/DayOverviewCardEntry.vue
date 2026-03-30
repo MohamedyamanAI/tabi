@@ -3,14 +3,24 @@ import DayOverviewCardChart from '@/Components/Dashboard/DayOverviewCardChart.vu
 import { formatHumanReadableDate, formatHumanReadableDuration } from '@/packages/ui/src/utils/time';
 import { inject, type ComputedRef } from 'vue';
 import type { Organization } from '@/packages/api/src';
+import { activityLevelTextClass } from '@/utils/activityLevel';
 
 const organization = inject<ComputedRef<Organization>>('organization');
 
-defineProps<{
+const props = defineProps<{
     date: string;
     duration: number;
     history: number[];
+    showActivityLevel?: boolean;
+    activityLevel?: number | null;
 }>();
+
+function activityLabel() {
+    if (props.activityLevel === null || props.activityLevel === undefined) {
+        return '—';
+    }
+    return `${props.activityLevel}%`;
+}
 </script>
 
 <template>
@@ -31,6 +41,12 @@ defineProps<{
                     organization?.number_format
                 )
             }}
+        </div>
+        <div
+            v-if="showActivityLevel"
+            class="flex text-xs font-medium items-center justify-end min-w-[40px] tabular-nums"
+            :class="activityLevelTextClass(activityLevel ?? null)">
+            {{ activityLabel() }}
         </div>
     </div>
 </template>

@@ -48,6 +48,8 @@ use Staudenmeir\EloquentJsonRelations\Relations\BelongsToJson;
  * @property-read Task|null $task
  * @property-read Collection<int, Tag> $tagsRelation
  * @property-read Collection<int, Screenshot> $screenshots
+ * @property-read Collection<int, ActivitySample> $activitySamples
+ * @property-read Collection<int, AppActivity> $appActivities
  *
  * @method Builder<TimeEntry> hasTag(Tag $tag)
  * @method static TimeEntryFactory factory()
@@ -231,6 +233,22 @@ class TimeEntry extends Model implements AuditableContract
     public function screenshots(): HasMany
     {
         return $this->hasMany(Screenshot::class, 'time_entry_id');
+    }
+
+    /**
+     * @return HasMany<ActivitySample, $this>
+     */
+    public function activitySamples(): HasMany
+    {
+        return $this->hasMany(ActivitySample::class, 'time_entry_id');
+    }
+
+    /**
+     * @return HasMany<AppActivity, $this>
+     */
+    public function appActivities(): HasMany
+    {
+        return $this->hasMany(AppActivity::class, 'time_entry_id');
     }
 
     /**

@@ -12,6 +12,7 @@ use App\Enums\TimeFormat;
 use App\Http\Requests\V1\BaseFormRequest;
 use App\Models\Organization;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 /**
  * @property Organization $organization Organization from model binding
@@ -64,6 +65,12 @@ class OrganizationUpdateRequest extends BaseFormRequest
                 'min:1',
                 'max:60',
             ],
+            'activity_tracking_enabled' => [
+                'boolean',
+            ],
+            'app_activity_sync_enabled' => [
+                'boolean',
+            ],
             'number_format' => [
                 Rule::enum(NumberFormat::class),
             ],
@@ -89,6 +96,26 @@ class OrganizationUpdateRequest extends BaseFormRequest
                 'boolean',
             ],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $v): void {
+            /** @var Organization|null $org */
+            $org = $this->route('organization');
+            if ($org === null) {
+                return;
+            }
+            $activityTracking = $this->has('activity_tracking_enabled')
+                ? $this->boolean('activity_tracking_enabled')
+                : (bool) $org->activity_tracking_enabled;
+            if ($this->has('app_activity_sync_enabled') && $this->boolean('app_activity_sync_enabled') && ! $activityTracking) {
+                $v->errors()->add(
+                    'app_activity_sync_enabled',
+                    'Enable activity level tracking before enabling app activity sync.'
+                );
+            }
+        });
     }
 
     public function getName(): ?string
@@ -166,5 +193,15 @@ class OrganizationUpdateRequest extends BaseFormRequest
     public function getIdleThresholdMinutes(): ?int
     {
         return $this->has('idle_threshold_minutes') ? (int) $this->input('idle_threshold_minutes') : null;
+    }
+
+    public function getActivityTrackingEnabled(): ?bool
+    {
+        return $this->has('activity_tracking_enabled') ? $this->boolean('activity_tracking_enabled') : null;
+    }
+
+    public function getAppActivitySyncEnabled(): ?bool
+    {
+        return $this->has('app_activity_sync_enabled') ? $this->boolean('app_activity_sync_enabled') : null;
     }
 }
