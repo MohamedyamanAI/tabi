@@ -91,6 +91,15 @@ class OrganizationController extends Controller
         if ($request->getIdleThresholdMinutes() !== null) {
             $organization->idle_threshold_minutes = $request->getIdleThresholdMinutes();
         }
+        if ($request->getActivityTrackingEnabled() !== null) {
+            $organization->activity_tracking_enabled = $request->getActivityTrackingEnabled();
+            if (! $organization->activity_tracking_enabled) {
+                $organization->app_activity_sync_enabled = false;
+            }
+        }
+        if ($request->getAppActivitySyncEnabled() !== null && $organization->activity_tracking_enabled) {
+            $organization->app_activity_sync_enabled = $request->getAppActivitySyncEnabled();
+        }
         $hasBillableRate = $request->has('billable_rate');
         if ($hasBillableRate) {
             $oldBillableRate = $organization->billable_rate;

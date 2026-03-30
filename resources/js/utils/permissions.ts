@@ -139,6 +139,13 @@ export function canViewScreenshots() {
 export function canViewAllScreenshots() {
     return currentUserHasPermission('screenshots:view:all');
 }
+
+export function canViewAppActivities() {
+    return (
+        currentUserHasPermission('app-activities:view:own') ||
+        currentUserHasPermission('app-activities:view:all')
+    );
+}
 export function canDeleteScreenshots() {
     return currentUserHasPermission('screenshots:delete:own') || currentUserHasPermission('screenshots:delete:all');
 }

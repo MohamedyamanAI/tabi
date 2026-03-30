@@ -9,6 +9,7 @@ import OrganizationBillableRate from '@/Pages/Teams/Partials/OrganizationBillabl
 import OrganizationFormatSettings from '@/Pages/Teams/Partials/OrganizationFormatSettings.vue';
 import OrganizationTimeEntrySettings from '@/Pages/Teams/Partials/OrganizationTimeEntrySettings.vue';
 import OrganizationScreenshotSettings from '@/Pages/Teams/Partials/OrganizationScreenshotSettings.vue';
+import OrganizationActivitySettings from '@/Pages/Teams/Partials/OrganizationActivitySettings.vue';
 import OrganizationIdleDetectionSettings from '@/Pages/Teams/Partials/OrganizationIdleDetectionSettings.vue';
 import { onMounted, ref } from 'vue';
 import { useOrganizationStore } from '@/utils/useOrganization';
@@ -57,6 +58,9 @@ onMounted(async () => {
                     <SectionBorder />
 
                     <OrganizationScreenshotSettings v-if="permissions.canUpdateTeam" />
+                    <SectionBorder />
+
+                    <OrganizationActivitySettings v-if="permissions.canUpdateTeam" />
                     <SectionBorder />
 
                     <OrganizationIdleDetectionSettings v-if="permissions.canUpdateTeam" />

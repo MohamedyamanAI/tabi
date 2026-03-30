@@ -338,6 +338,8 @@ const OrganizationResource = z
         screenshots_blurred: z.boolean(),
         idle_detection_enabled: z.boolean(),
         idle_threshold_minutes: z.number().int(),
+        activity_tracking_enabled: z.boolean(),
+        app_activity_sync_enabled: z.boolean(),
     })
     .passthrough();
 const OrganizationUpdateRequest = z
@@ -358,6 +360,8 @@ const OrganizationUpdateRequest = z
         screenshots_blurred: z.boolean(),
         idle_detection_enabled: z.boolean(),
         idle_threshold_minutes: z.number().int().gte(1).lte(60),
+        activity_tracking_enabled: z.boolean(),
+        app_activity_sync_enabled: z.boolean(),
     })
     .partial()
     .passthrough();
@@ -1154,6 +1158,115 @@ const endpoints = makeApi([
             },
         ],
         response: z.array(z.object({ date: z.string(), duration: z.number().int() }).passthrough()),
+        errors: [
+            {
+                status: 401,
+                description: `Unauthenticated`,
+                schema: z.object({ message: z.string() }).passthrough(),
+            },
+            {
+                status: 403,
+                description: `Authorization error`,
+                schema: z.object({ message: z.string() }).passthrough(),
+            },
+            {
+                status: 404,
+                description: `Not found`,
+                schema: z.object({ message: z.string() }).passthrough(),
+            },
+        ],
+    },
+    {
+        method: 'get',
+        path: '/v1/organizations/:organization/charts/activity-level',
+        alias: 'activityLevel',
+        requestFormat: 'json',
+        parameters: [
+            {
+                name: 'organization',
+                type: 'Path',
+                schema: z.string(),
+            },
+        ],
+        response: z.union([z.number().int(), z.null()]),
+        errors: [
+            {
+                status: 401,
+                description: `Unauthenticated`,
+                schema: z.object({ message: z.string() }).passthrough(),
+            },
+            {
+                status: 403,
+                description: `Authorization error`,
+                schema: z.object({ message: z.string() }).passthrough(),
+            },
+            {
+                status: 404,
+                description: `Not found`,
+                schema: z.object({ message: z.string() }).passthrough(),
+            },
+        ],
+    },
+    {
+        method: 'get',
+        path: '/v1/organizations/:organization/charts/daily-activity-levels',
+        alias: 'dailyActivityLevels',
+        requestFormat: 'json',
+        parameters: [
+            {
+                name: 'organization',
+                type: 'Path',
+                schema: z.string(),
+            },
+        ],
+        response: z.array(
+            z
+                .object({
+                    date: z.string(),
+                    activity_level: z.union([z.number().int(), z.null()]),
+                })
+                .passthrough()
+        ),
+        errors: [
+            {
+                status: 401,
+                description: `Unauthenticated`,
+                schema: z.object({ message: z.string() }).passthrough(),
+            },
+            {
+                status: 403,
+                description: `Authorization error`,
+                schema: z.object({ message: z.string() }).passthrough(),
+            },
+            {
+                status: 404,
+                description: `Not found`,
+                schema: z.object({ message: z.string() }).passthrough(),
+            },
+        ],
+    },
+    {
+        method: 'get',
+        path: '/v1/organizations/:organization/charts/team-activity-levels',
+        alias: 'teamActivityLevels',
+        requestFormat: 'json',
+        parameters: [
+            {
+                name: 'organization',
+                type: 'Path',
+                schema: z.string(),
+            },
+        ],
+        response: z.array(
+            z
+                .object({
+                    member_id: z.string(),
+                    activity_level: z.number().int(),
+                    avg_keystrokes_per_min: z.number(),
+                    avg_mouse_clicks_per_min: z.number(),
+                })
+                .passthrough()
+        ),
         errors: [
             {
                 status: 401,

@@ -6,6 +6,7 @@ namespace Tests\Unit\Service;
 
 use App\Enums\Role;
 use App\Enums\Weekday;
+use App\Models\ActivitySample;
 use App\Models\Member;
 use App\Models\Organization;
 use App\Models\Project;
@@ -662,5 +663,27 @@ class DashboardServiceTest extends TestCase
                 ],
             ],
         ], $result);
+    }
+
+    public function test_get_activity_level_for_user_averages_current_week_samples(): void
+    {
+        $this->travelTo(Carbon::create(2024, 1, 3, 12, 0, 0, 'UTC'));
+        $organization = Organization::factory()->create();
+        $user = User::factory()->create([
+            'timezone' => 'UTC',
+            'week_start' => Weekday::Monday,
+        ]);
+        $member = Member::factory()->forUser($user)->forOrganization($organization)->create();
+        $timeEntry = TimeEntry::factory()->forMember($member)->forOrganization($organization)->create();
+
+        ActivitySample::factory()->forTimeEntry($timeEntry)->create([
+            'timestamp' => Carbon::create(2024, 1, 1, 10, 0, 0, 'UTC'),
+            'keystrokes' => 30,
+            'mouse_clicks' => 30,
+        ]);
+
+        $level = $this->dashboardService->getActivityLevelForUser($user, $organization);
+
+        $this->assertSame(100, $level);
     }
 }

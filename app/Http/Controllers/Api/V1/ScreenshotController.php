@@ -11,7 +11,6 @@ use App\Http\Resources\V1\Screenshot\ScreenshotResource;
 use App\Models\Organization;
 use App\Models\Screenshot;
 use App\Models\TimeEntry;
-use App\Service\BillingContract;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
@@ -19,14 +18,14 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ScreenshotController extends Controller
 {
+    use Concerns\EnsuresMonitorPlan;
+
     /**
      * @throws AuthorizationException
      */
     protected function ensureScreenshotFeatureAvailable(Organization $organization): void
     {
-        if (app(BillingContract::class)->getTier($organization) !== 'monitor') {
-            throw new AuthorizationException('Screenshots are only available on the Monitor plan.');
-        }
+        $this->ensureMonitorPlan($organization, 'Screenshots are only available on the Monitor plan.');
     }
 
     protected function checkPermission(Organization $organization, string $permission, ?Screenshot $screenshot = null): void

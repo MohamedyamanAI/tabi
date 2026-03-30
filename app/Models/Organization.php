@@ -54,6 +54,8 @@ use OwenIt\Auditing\Contracts\Auditable as AuditableContract;
  * @property bool $screenshots_blurred
  * @property bool $idle_detection_enabled
  * @property int $idle_threshold_minutes
+ * @property bool $activity_tracking_enabled
+ * @property bool $app_activity_sync_enabled
  * @property NumberFormat $number_format
  * @property CurrencyFormat $currency_format
  * @property DateFormat $date_format
@@ -90,6 +92,8 @@ class Organization extends JetstreamTeam implements AuditableContract
         'screenshots_blurred' => 'boolean',
         'idle_detection_enabled' => 'boolean',
         'idle_threshold_minutes' => 'integer',
+        'activity_tracking_enabled' => 'boolean',
+        'app_activity_sync_enabled' => 'boolean',
         'number_format' => NumberFormat::class,
         'currency_format' => CurrencyFormat::class,
         'date_format' => DateFormat::class,

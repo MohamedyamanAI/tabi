@@ -9,6 +9,7 @@ import {
     ClockIcon,
     Cog6ToothIcon,
     CameraIcon,
+    ComputerDesktopIcon,
     CreditCardIcon,
     FolderIcon,
     HomeIcon,
@@ -37,6 +38,7 @@ import {
     canViewReport,
     canViewScreenshots,
     canViewTags,
+    canViewAppActivities,
 } from '@/utils/permissions';
 import { isBillingActivated, isInvoicingActivated } from '@/utils/billing';
 import type { User } from '@/types/models';
@@ -245,6 +247,16 @@ const page = usePage<{
                                 :icon="CameraIcon"
                                 :current="route().current('screenshots')"
                                 :href="route('screenshots')"></NavigationSidebarItem>
+                            <NavigationSidebarItem
+                                v-if="
+                                    canViewAppActivities() &&
+                                    organization?.activity_tracking_enabled &&
+                                    organization?.app_activity_sync_enabled
+                                "
+                                title="App Activity"
+                                :icon="ComputerDesktopIcon"
+                                :current="route().current('app-activity')"
+                                :href="route('app-activity')"></NavigationSidebarItem>
                             <NavigationSidebarItem
                                 v-if="canViewTags()"
                                 title="Tags"

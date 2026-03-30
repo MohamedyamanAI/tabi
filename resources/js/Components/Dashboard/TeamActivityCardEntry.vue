@@ -1,9 +1,39 @@
 <script lang="ts" setup>
-defineProps<{
+import { computed } from 'vue';
+import { activityLevelBarClass, activityLevelTextClass } from '@/utils/activityLevel';
+
+const props = defineProps<{
     name: string;
     description: string | null;
     working?: boolean;
+    showActivityBar?: boolean;
+    activityLevel?: number | null;
+    avgKeystrokesPerMin?: number;
+    avgMouseClicksPerMin?: number;
 }>();
+
+const tooltipTitle = computed(() => {
+    if (
+        props.avgKeystrokesPerMin === undefined ||
+        props.avgMouseClicksPerMin === undefined
+    ) {
+        return undefined;
+    }
+    return `Keystrokes: ${props.avgKeystrokesPerMin}/min avg, Mouse clicks: ${props.avgMouseClicksPerMin}/min avg`;
+});
+
+const barWidth = computed(() => {
+    if (props.activityLevel === null || props.activityLevel === undefined) {
+        return 0;
+    }
+    return Math.min(100, Math.max(0, props.activityLevel));
+});
+
+const offline = computed(
+    () =>
+        props.showActivityBar &&
+        (props.activityLevel === null || props.activityLevel === undefined)
+);
 </script>
 
 <template>
@@ -26,6 +56,26 @@ defineProps<{
             <div
                 class="text-text-secondary text-sm font-medium text-ellipsis whitespace-nowrap max-w-full overflow-hidden">
                 {{ description }}
+            </div>
+            <div v-if="showActivityBar" class="mt-2 flex items-center gap-2" :title="tooltipTitle">
+                <div class="h-1.5 flex-1 rounded-full bg-tertiary min-w-0">
+                    <div
+                        v-if="!offline"
+                        class="h-full rounded-full transition-all"
+                        :class="activityLevelBarClass(activityLevel ?? null)"
+                        :style="{ width: barWidth + '%' }"></div>
+                </div>
+                <span
+                    v-if="offline"
+                    class="text-xs text-muted whitespace-nowrap shrink-0">
+                    offline
+                </span>
+                <span
+                    v-else
+                    class="text-xs font-medium whitespace-nowrap shrink-0 tabular-nums w-9 text-right"
+                    :class="activityLevelTextClass(activityLevel ?? null)">
+                    {{ activityLevel }}%
+                </span>
             </div>
         </div>
     </div>
