@@ -2,8 +2,29 @@
 import { BellAlertIcon, XMarkIcon } from '@heroicons/vue/20/solid';
 import { SecondaryButton } from '@/packages/ui/src';
 import { useStorage } from '@vueuse/core';
-import { handleDesktopDownload } from '@/utils/download';
+import {
+    getMacDesktopDownloadUrl,
+    handleDesktopDownload,
+    isMacClient,
+    openDesktopDownloadUrl,
+} from '@/utils/download';
+import { ref } from 'vue';
+import DesktopArchDownloadModal from '@/Components/DesktopArchDownloadModal.vue';
 const showReleaseInfo = useStorage('showReleaseInfo-desktop', true);
+const showMacArchDialog = ref(false);
+
+const onDownloadDesktop = () => {
+    if (isMacClient()) {
+        showMacArchDialog.value = true;
+        return;
+    }
+    handleDesktopDownload();
+};
+
+const onSelectMacArch = (arch: 'arm64' | 'x64') => {
+    showMacArchDialog.value = false;
+    openDesktopDownloadUrl(getMacDesktopDownloadUrl(arch));
+};
 </script>
 
 <template>
@@ -29,10 +50,14 @@ const showReleaseInfo = useStorage('showReleaseInfo-desktop', true);
             <SecondaryButton
                 size="small"
                 class="w-full text-center justify-center mt-1.5"
-                @click="handleDesktopDownload"
+                @click="onDownloadDesktop"
                 >Download now</SecondaryButton
             >
         </div>
+        <DesktopArchDownloadModal
+            :show="showMacArchDialog"
+            @close="showMacArchDialog = false"
+            @select="onSelectMacArch" />
     </div>
 </template>
 
