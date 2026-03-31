@@ -15,8 +15,15 @@ import {
     ChatBubbleLeftRightIcon,
 } from '@heroicons/vue/24/solid';
 import { openFeedback } from '@/utils/feedback';
-import { handleDesktopDownload } from '@/utils/download';
+import {
+    getMacDesktopDownloadUrl,
+    handleDesktopDownload,
+    isMacClient,
+    openDesktopDownloadUrl,
+} from '@/utils/download';
 import { ComputerDesktopIcon } from '@heroicons/vue/24/outline';
+import { ref } from 'vue';
+import DesktopArchDownloadModal from '@/Components/DesktopArchDownloadModal.vue';
 
 const page = usePage<{
     has_services_extension?: boolean;
@@ -36,6 +43,21 @@ const page = usePage<{
 
 const logout = () => {
     router.post(route('logout'));
+};
+
+const showMacArchDialog = ref(false);
+
+const onDownloadDesktop = () => {
+    if (isMacClient()) {
+        showMacArchDialog.value = true;
+        return;
+    }
+    handleDesktopDownload();
+};
+
+const onSelectMacArch = (arch: 'arm64' | 'x64') => {
+    showMacArchDialog.value = false;
+    openDesktopDownloadUrl(getMacDesktopDownloadUrl(arch));
 };
 </script>
 <template>
@@ -86,7 +108,7 @@ const logout = () => {
                     <button
                         type="button"
                         class="inline-flex items-center gap-2.5 w-full"
-                        @click="handleDesktopDownload">
+                        @click="onDownloadDesktop">
                         <ComputerDesktopIcon class="w-5 h-5 text-icon-default" />
                         <span>Download Desktop</span>
                     </button>
@@ -102,5 +124,10 @@ const logout = () => {
                 </form>
             </DropdownMenuContent>
         </DropdownMenu>
+
+        <DesktopArchDownloadModal
+            :show="showMacArchDialog"
+            @close="showMacArchDialog = false"
+            @select="onSelectMacArch" />
     </div>
 </template>

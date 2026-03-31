@@ -22,7 +22,13 @@ import {
     ChevronDownIcon,
 } from '@heroicons/vue/20/solid';
 import { CheckCircleIcon as CheckCircleOutlineIcon } from '@heroicons/vue/24/outline';
-import { handleDesktopDownload } from '@/utils/download';
+import {
+    getMacDesktopDownloadUrl,
+    handleDesktopDownload,
+    isMacClient,
+    openDesktopDownloadUrl,
+} from '@/utils/download';
+import DesktopArchDownloadModal from '@/Components/DesktopArchDownloadModal.vue';
 
 interface FaqItem {
     q: string;
@@ -230,6 +236,20 @@ const baseFaqs: FaqItem[] = [
 ];
 
 const faqs = computed(() => [...props.extraFaqs, ...baseFaqs]);
+const showMacArchDialog = ref(false);
+
+const onDownloadDesktop = () => {
+    if (isMacClient()) {
+        showMacArchDialog.value = true;
+        return;
+    }
+    handleDesktopDownload();
+};
+
+const onSelectMacArch = (arch: 'arm64' | 'x64') => {
+    showMacArchDialog.value = false;
+    openDesktopDownloadUrl(getMacDesktopDownloadUrl(arch));
+};
 
 function cycleTheme() {
     if (theme.value === 'dark') {
@@ -341,7 +361,7 @@ function cycleTheme() {
                     Get Started
                 </Link>
                 <button
-                    @click="handleDesktopDownload"
+                    @click="onDownloadDesktop"
                     class="px-8 py-3 text-lg rounded-lg border border-card-border text-text-primary hover:bg-card-background transition-colors">
                     Download App
                 </button>
@@ -965,7 +985,7 @@ function cycleTheme() {
                                 </Link>
                             </li>
                             <li>
-                                <button @click="handleDesktopDownload" class="text-text-secondary hover:text-text-primary transition-colors">
+                                <button @click="onDownloadDesktop" class="text-text-secondary hover:text-text-primary transition-colors">
                                     Download App
                                 </button>
                             </li>
@@ -1055,6 +1075,11 @@ function cycleTheme() {
                 </div>
             </div>
         </footer>
+
+        <DesktopArchDownloadModal
+            :show="showMacArchDialog"
+            @close="showMacArchDialog = false"
+            @select="onSelectMacArch" />
     </div>
 </template>
 
