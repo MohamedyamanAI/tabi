@@ -1,5 +1,13 @@
 const R2_BASE = 'https://pub-e438c5d641984ba181976c5209481fbd.r2.dev/releases/latest'
 
+export function isMacClient(): boolean {
+    return window.navigator.userAgent.toLowerCase().includes('mac')
+}
+
+export function getMacDesktopDownloadUrl(arch: 'arm64' | 'x64'): string {
+    return arch === 'arm64' ? `${R2_BASE}/tabi-arm64.dmg` : `${R2_BASE}/tabi-x64.dmg`
+}
+
 export function getDesktopDownloadUrl(): string {
     const userAgent = window.navigator.userAgent.toLowerCase()
     const platform = (window.navigator.platform || '').toLowerCase()
@@ -31,7 +39,11 @@ export function getDesktopDownloadUrl(): string {
     return `${R2_BASE}/tabi-Setup.exe`
 }
 
+export function openDesktopDownloadUrl(url: string): void {
+    window.open(url, '_blank')?.focus()
+}
+
 export function handleDesktopDownload(): void {
     const url = getDesktopDownloadUrl()
-    window.open(url, '_blank')?.focus()
+    openDesktopDownloadUrl(url)
 }
