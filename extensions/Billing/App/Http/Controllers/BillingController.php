@@ -13,6 +13,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Polar\Models\Components;
+use Polar\Models\Errors\APIException;
+use Illuminate\Support\Facades\Log;
 
 class BillingController extends Controller
 {
@@ -29,6 +31,30 @@ class BillingController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Log billing request failures with enough context for production debugging.
+     *
+     * @param array<string, mixed> $context
+     */
+    private function logBillingError(string $action, \Throwable $error, ?Organization $org, int|string|null $userId, array $context = []): void
+    {
+        $baseContext = [
+            'action' => $action,
+            'organization_id' => $org?->id,
+            'user_id' => $userId,
+            'exception' => $error::class,
+            'message' => $error->getMessage(),
+        ];
+
+        if ($error instanceof APIException) {
+            $baseContext['polar_status'] = $error->statusCode;
+            $baseContext['polar_body'] = $error->body;
+            $baseContext['polar_request_id'] = $error->rawResponse?->getHeaderLine('x-request-id');
+        }
+
+        Log::error('Billing request failed', array_merge($baseContext, $context));
     }
 
     /**
@@ -111,7 +137,11 @@ class BillingController extends Controller
             return response()->json([
                 'url' => $checkout->url,
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            $this->logBillingError('checkout', $e, $org, $user->id, [
+                'product_key' => $request->input('product_key'),
+                'seats' => $newSeats,
+            ]);
             return response()->json(['error' => 'Failed to create checkout: '.$e->getMessage()], 500);
         }
     }
@@ -173,7 +203,11 @@ class BillingController extends Controller
             $sub->update(['seats' => $newSeats]);
 
             return response()->json(['seats' => $newSeats]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            $this->logBillingError('update_seats', $e, $org, $user->id, [
+                'requested_seats' => $newSeats,
+                'current_paid_seats' => $currentPaidSeats,
+            ]);
             return response()->json(['error' => 'Failed to update seats: '.$e->getMessage()], 500);
         }
     }
@@ -221,7 +255,11 @@ class BillingController extends Controller
             $sub->update(['product_id' => $newProductId]);
 
             return response()->json(['tier' => $this->billing->getTier($org)]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            $this->logBillingError('swap', $e, $org, $user->id, [
+                'product_key' => $request->input('product_key'),
+                'subscription_id' => $sub->polar_id,
+            ]);
             return response()->json(['error' => 'Failed to swap plan: '.$e->getMessage()], 500);
         }
     }
@@ -257,7 +295,10 @@ class BillingController extends Controller
             );
 
             return response()->json(['status' => 'canceling', 'ends_at' => $sub->current_period_end?->toIso8601ZuluString()]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            $this->logBillingError('cancel', $e, $org, $user->id, [
+                'subscription_id' => $sub->polar_id,
+            ]);
             return response()->json(['error' => 'Failed to cancel: '.$e->getMessage()], 500);
         }
     }
@@ -299,7 +340,10 @@ class BillingController extends Controller
             ]);
 
             return response()->json(['status' => 'active']);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            $this->logBillingError('resume', $e, $org, $user->id, [
+                'subscription_id' => $sub->polar_id,
+            ]);
             return response()->json(['error' => 'Failed to resume: '.$e->getMessage()], 500);
         }
     }
