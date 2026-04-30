@@ -23,25 +23,31 @@ class AppActivityStoreRequest extends BaseFormRequest
                 'required',
                 'array',
                 'min:1',
+                'max:300',
             ],
             'activities.*.timestamp' => [
+                'bail',
                 'required',
                 'date',
             ],
             'activities.*.app_name' => [
+                'bail',
                 'required',
                 'string',
                 'max:255',
             ],
             'activities.*.window_title' => [
+                'bail',
                 'required',
                 'string',
             ],
             'activities.*.url' => [
+                'bail',
                 'nullable',
                 'string',
             ],
             'activities.*.duration_seconds' => [
+                'bail',
                 'required',
                 'integer',
                 'min:0',

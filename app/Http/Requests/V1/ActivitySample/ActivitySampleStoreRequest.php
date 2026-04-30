@@ -23,17 +23,21 @@ class ActivitySampleStoreRequest extends BaseFormRequest
                 'required',
                 'array',
                 'min:1',
+                'max:1000',
             ],
             'samples.*.timestamp' => [
+                'bail',
                 'required',
                 'date',
             ],
             'samples.*.keystrokes' => [
+                'bail',
                 'required',
                 'integer',
                 'min:0',
             ],
             'samples.*.mouse_clicks' => [
+                'bail',
                 'required',
                 'integer',
                 'min:0',
