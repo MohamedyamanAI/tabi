@@ -197,30 +197,34 @@ class LogRequestDetails
         $input = $diagnostics;
 
         if ($request->isJson()) {
-            $jsonInput = $request->json()->all();
-            $jsonSize = strlen(json_encode($jsonInput, JSON_THROW_ON_ERROR));
-            $input['json_size_bytes'] = $jsonSize;
+            if ($this->isActivityUploadPath($method, $path)) {
+                $input['json_size_bytes'] = (int) $request->header('Content-Length', 0);
+            } else {
+                $jsonInput = $request->json()->all();
+                $jsonSize = strlen(json_encode($jsonInput, JSON_THROW_ON_ERROR));
+                $input['json_size_bytes'] = $jsonSize;
 
-            if ($jsonSize > 10 * 1024 * 1024) {
-                Log::warning('Large JSON payload detected', array_merge([
-                    'endpoint' => "$method $path",
-                    'user_id' => $userId,
-                    'organization_id' => $organizationId,
-                    'size_mb' => round($jsonSize / (1024 * 1024), 2),
-                    'size_bytes' => $jsonSize,
-                ], $this->appActivitiesPayloadContext($request), $this->activitySamplesPayloadContext($request)));
-            }
+                if ($jsonSize > 10 * 1024 * 1024) {
+                    Log::warning('Large JSON payload detected', array_merge([
+                        'endpoint' => "$method $path",
+                        'user_id' => $userId,
+                        'organization_id' => $organizationId,
+                        'size_mb' => round($jsonSize / (1024 * 1024), 2),
+                        'size_bytes' => $jsonSize,
+                    ], $this->appActivitiesPayloadContext($request), $this->activitySamplesPayloadContext($request)));
+                }
 
-            if (str_contains($path, 'import')) {
-                Log::info('Import request received', [
-                    'endpoint' => "$method $path",
-                    'user_id' => $userId,
-                    'organization_id' => $organizationId,
-                    'import_type' => $jsonInput['type'] ?? 'unknown',
-                    'data_size_kb' => isset($jsonInput['data']) ? round(strlen($jsonInput['data']) / 1024, 2) : 0,
-                    'data_size_mb' => isset($jsonInput['data']) ? round(strlen($jsonInput['data']) / (1024 * 1024), 2) : 0,
-                    'content_length_header' => $request->header('Content-Length'),
-                ]);
+                if (str_contains($path, 'import')) {
+                    Log::info('Import request received', [
+                        'endpoint' => "$method $path",
+                        'user_id' => $userId,
+                        'organization_id' => $organizationId,
+                        'import_type' => $jsonInput['type'] ?? 'unknown',
+                        'data_size_kb' => isset($jsonInput['data']) ? round(strlen($jsonInput['data']) / 1024, 2) : 0,
+                        'data_size_mb' => isset($jsonInput['data']) ? round(strlen($jsonInput['data']) / (1024 * 1024), 2) : 0,
+                        'content_length_header' => $request->header('Content-Length'),
+                    ]);
+                }
             }
         }
 
