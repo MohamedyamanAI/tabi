@@ -27,11 +27,19 @@ class LogRequestDetails
         register_shutdown_function(function () use ($request) {
             $error = error_get_last();
             if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+                $organization = request()->route('organization');
+                $organizationId = null;
+                if ($organization) {
+                    $organizationId = is_object($organization) && method_exists($organization, 'getKey') 
+                        ? $organization->getKey() 
+                        : (is_string($organization) ? $organization : null);
+                }
+                
                 Log::error('Fatal error during request', [
                     'method' => $request->method(),
                     'path' => $request->path(),
                     'user_id' => auth()->id() ?? 'anonymous',
-                    'organization_id' => request()->route('organization') ?? 'N/A',
+                    'organization_id' => $organizationId ?? 'N/A',
                     'error_type' => $error['type'],
                     'error_message' => $error['message'],
                     'error_file' => $error['file'],
@@ -55,7 +63,16 @@ class LogRequestDetails
         $path = $request->path();
         $contentLength = $request->header('Content-Length') ?? 'unknown';
         $userId = auth()->id() ?? 'anonymous';
-        $organizationId = request()->route('organization') ?? 'N/A';
+        
+        // Extract organization ID from route parameter
+        $organization = request()->route('organization');
+        $organizationId = null;
+        if ($organization) {
+            $organizationId = is_object($organization) && method_exists($organization, 'getKey') 
+                ? $organization->getKey() 
+                : (is_string($organization) ? $organization : null);
+        }
+        $organizationId = $organizationId ?? 'N/A';
 
         $input = [];
         if ($request->isJson()) {
