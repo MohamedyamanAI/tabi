@@ -208,7 +208,7 @@ jobs:
             docker compose exec -T app php artisan migrate --force
             docker compose exec -T app php artisan module:migrate Billing --force
             docker compose exec -T app php artisan module:enable Billing
-            docker compose exec app php artisan route:clear
-            docker compose exec app php artisan route:optimize
+            docker compose exec -T app php artisan route:clear
+            docker compose exec -T app php artisan route:cache
             docker compose restart queue
             docker image prune -f
