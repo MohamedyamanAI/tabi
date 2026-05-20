@@ -36,38 +36,6 @@ class LogRequestDetails
 
         $this->logIncomingRequest($request, $diagnostics);
 
-        register_shutdown_function(function () use ($request, $diagnostics): void {
-            $error = error_get_last();
-            if ($error === null || ! in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
-                return;
-            }
-
-            $organization = request()->route('organization');
-            $organizationId = null;
-            if ($organization) {
-                $organizationId = is_object($organization) && method_exists($organization, 'getKey')
-                    ? $organization->getKey()
-                    : (is_string($organization) ? $organization : null);
-            }
-
-            $context = array_merge(
-                [
-                    'method' => $request->method(),
-                    'path' => $request->path(),
-                    'user_id' => auth()->id() ?? 'anonymous',
-                    'organization_id' => $organizationId ?? 'N/A',
-                    'error_type' => $error['type'],
-                    'error_message' => $error['message'],
-                    'error_file' => $error['file'],
-                    'error_line' => $error['line'],
-                    'validation_parser_fatal' => str_contains($error['file'], 'ValidationRuleParser'),
-                ],
-                $diagnostics,
-            );
-
-            Log::error('Fatal error during request', $context);
-        });
-
         $response = $next($request);
 
         $duration = (microtime(true) - $startTime) * 1000;
@@ -119,27 +87,10 @@ class LogRequestDetails
     private function appActivitiesPayloadContext(Request $request): array
     {
         $activities = $request->input('activities');
-        $context = [
+        return [
             'time_entry_id' => $request->input('time_entry_id'),
             'activities_count' => is_array($activities) ? count($activities) : null,
         ];
-
-        if (! is_array($activities) || $activities === []) {
-            return $context;
-        }
-
-        $context['activities_window_title_bytes_max'] = $this->maxStringFieldLength(
-            $activities,
-            'window_title',
-            50
-        );
-        $context['activities_app_name_bytes_max'] = $this->maxStringFieldLength(
-            $activities,
-            'app_name',
-            50
-        );
-
-        return $context;
     }
 
     /**
@@ -155,26 +106,7 @@ class LogRequestDetails
         ];
     }
 
-    /**
-     * @param  array<int, mixed>  $rows
-     */
-    private function maxStringFieldLength(array $rows, string $field, int $scanLimit): ?int
-    {
-        $max = 0;
-        $limit = min($scanLimit, count($rows));
 
-        for ($i = 0; $i < $limit; $i++) {
-            if (! is_array($rows[$i])) {
-                continue;
-            }
-            $value = $rows[$i][$field] ?? null;
-            if (is_string($value)) {
-                $max = max($max, strlen($value));
-            }
-        }
-
-        return $max > 0 ? $max : null;
-    }
 
     /**
      * @param  array<string, mixed>  $diagnostics
@@ -197,34 +129,30 @@ class LogRequestDetails
         $input = $diagnostics;
 
         if ($request->isJson()) {
-            if ($this->isActivityUploadPath($method, $path)) {
-                $input['json_size_bytes'] = (int) $request->header('Content-Length', 0);
-            } else {
+            $jsonSize = (int) $request->header('Content-Length', 0);
+            $input['json_size_bytes'] = $jsonSize;
+
+            if ($jsonSize > 10 * 1024 * 1024) {
+                Log::warning('Large JSON payload detected', [
+                    'endpoint' => "$method $path",
+                    'user_id' => $userId,
+                    'organization_id' => $organizationId,
+                    'size_mb' => round($jsonSize / (1024 * 1024), 2),
+                    'size_bytes' => $jsonSize,
+                ]);
+            }
+
+            if (str_contains($path, 'import')) {
                 $jsonInput = $request->json()->all();
-                $jsonSize = strlen(json_encode($jsonInput, JSON_THROW_ON_ERROR));
-                $input['json_size_bytes'] = $jsonSize;
-
-                if ($jsonSize > 10 * 1024 * 1024) {
-                    Log::warning('Large JSON payload detected', array_merge([
-                        'endpoint' => "$method $path",
-                        'user_id' => $userId,
-                        'organization_id' => $organizationId,
-                        'size_mb' => round($jsonSize / (1024 * 1024), 2),
-                        'size_bytes' => $jsonSize,
-                    ], $this->appActivitiesPayloadContext($request), $this->activitySamplesPayloadContext($request)));
-                }
-
-                if (str_contains($path, 'import')) {
-                    Log::info('Import request received', [
-                        'endpoint' => "$method $path",
-                        'user_id' => $userId,
-                        'organization_id' => $organizationId,
-                        'import_type' => $jsonInput['type'] ?? 'unknown',
-                        'data_size_kb' => isset($jsonInput['data']) ? round(strlen($jsonInput['data']) / 1024, 2) : 0,
-                        'data_size_mb' => isset($jsonInput['data']) ? round(strlen($jsonInput['data']) / (1024 * 1024), 2) : 0,
-                        'content_length_header' => $request->header('Content-Length'),
-                    ]);
-                }
+                Log::info('Import request received', [
+                    'endpoint' => "$method $path",
+                    'user_id' => $userId,
+                    'organization_id' => $organizationId,
+                    'import_type' => $jsonInput['type'] ?? 'unknown',
+                    'data_size_kb' => isset($jsonInput['data']) ? round(strlen($jsonInput['data']) / 1024, 2) : 0,
+                    'data_size_mb' => isset($jsonInput['data']) ? round(strlen($jsonInput['data']) / (1024 * 1024), 2) : 0,
+                    'content_length_header' => $jsonSize,
+                ]);
             }
         }
 
@@ -272,7 +200,17 @@ class LogRequestDetails
             ], $diagnostics));
         }
 
-        if ($statusCode >= 400) {
+        if ($statusCode >= 500) {
+            $context = array_merge([
+                'method' => $method,
+                'path' => $path,
+                'user_id' => $userId,
+                'status_code' => $statusCode,
+                'duration_ms' => round($duration, 2),
+            ], $diagnostics);
+
+            Log::error('Server error', $context);
+        } elseif ($statusCode >= 400) {
             $context = array_merge([
                 'method' => $method,
                 'path' => $path,
@@ -285,7 +223,11 @@ class LogRequestDetails
                 $context['response_message'] = $this->extractResponseMessage($response);
             }
 
-            Log::error('Request failed', $context);
+            if ($statusCode === 404 && str_ends_with($path, 'time-entries/active')) {
+                Log::debug('No active timer', $context);
+            } else {
+                Log::warning('Request failed (client error)', $context);
+            }
         }
 
         Log::debug('Outgoing response', [
