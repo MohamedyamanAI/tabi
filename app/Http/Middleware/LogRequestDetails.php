@@ -12,6 +12,19 @@ use Symfony\Component\HttpFoundation\Response;
 class LogRequestDetails
 {
     /**
+     * Query keys whose array length correlates with ValidationRuleParser wildcard cost.
+     *
+     * @var list<string>
+     */
+    private const FILTER_ARRAY_KEYS = [
+        'member_ids',
+        'client_ids',
+        'project_ids',
+        'tag_ids',
+        'task_ids',
+    ];
+
+    /**
      * Handle an incoming request.
      *
      * @param Closure(Request): Response $next
@@ -19,23 +32,26 @@ class LogRequestDetails
     public function handle(Request $request, Closure $next): Response
     {
         $startTime = microtime(true);
-        
-        // Log incoming request
-        $this->logIncomingRequest($request);
+        $diagnostics = $this->requestDiagnosticContext($request);
 
-        // Register shutdown handler to catch fatal errors with request context
-        register_shutdown_function(function () use ($request) {
+        $this->logIncomingRequest($request, $diagnostics);
+
+        register_shutdown_function(function () use ($request, $diagnostics): void {
             $error = error_get_last();
-            if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-                $organization = request()->route('organization');
-                $organizationId = null;
-                if ($organization) {
-                    $organizationId = is_object($organization) && method_exists($organization, 'getKey') 
-                        ? $organization->getKey() 
-                        : (is_string($organization) ? $organization : null);
-                }
-                
-                Log::error('Fatal error during request', [
+            if ($error === null || ! in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR], true)) {
+                return;
+            }
+
+            $organization = request()->route('organization');
+            $organizationId = null;
+            if ($organization) {
+                $organizationId = is_object($organization) && method_exists($organization, 'getKey')
+                    ? $organization->getKey()
+                    : (is_string($organization) ? $organization : null);
+            }
+
+            $context = array_merge(
+                [
                     'method' => $request->method(),
                     'path' => $request->path(),
                     'user_id' => auth()->id() ?? 'anonymous',
@@ -44,60 +60,157 @@ class LogRequestDetails
                     'error_message' => $error['message'],
                     'error_file' => $error['file'],
                     'error_line' => $error['line'],
-                ]);
-            }
+                    'validation_parser_fatal' => str_contains($error['file'], 'ValidationRuleParser'),
+                ],
+                $diagnostics,
+            );
+
+            Log::error('Fatal error during request', $context);
         });
 
         $response = $next($request);
 
-        // Log response and timing
-        $duration = (microtime(true) - $startTime) * 1000; // Convert to milliseconds
-        $this->logOutgoingResponse($request, $response, $duration);
+        $duration = (microtime(true) - $startTime) * 1000;
+        $this->logOutgoingResponse($request, $response, $duration, $diagnostics);
 
         return $response;
     }
 
-    private function logIncomingRequest(Request $request): void
+    /**
+     * @return array<string, mixed>
+     */
+    private function requestDiagnosticContext(Request $request): array
     {
         $method = $request->method();
         $path = $request->path();
-        $contentLength = $request->header('Content-Length') ?? 'unknown';
+        $queryString = $request->getQueryString() ?? '';
+
+        $context = [
+            'content_length_header' => $request->header('Content-Length'),
+            'query_string_length' => strlen($queryString),
+        ];
+
+        foreach (self::FILTER_ARRAY_KEYS as $key) {
+            if (! $request->has($key)) {
+                continue;
+            }
+            $value = $request->input($key);
+            $context[$key.'_count'] = is_array($value) ? count($value) : 1;
+        }
+
+        if ($request->isJson()) {
+            $context['is_json'] = true;
+        }
+
+        if ($method === 'POST' && str_ends_with($path, 'app-activities')) {
+            $context = array_merge($context, $this->appActivitiesPayloadContext($request));
+        }
+
+        if ($method === 'POST' && str_ends_with($path, 'activity-samples')) {
+            $context = array_merge($context, $this->activitySamplesPayloadContext($request));
+        }
+
+        return $context;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function appActivitiesPayloadContext(Request $request): array
+    {
+        $activities = $request->input('activities');
+        $context = [
+            'time_entry_id' => $request->input('time_entry_id'),
+            'activities_count' => is_array($activities) ? count($activities) : null,
+        ];
+
+        if (! is_array($activities) || $activities === []) {
+            return $context;
+        }
+
+        $context['activities_window_title_bytes_max'] = $this->maxStringFieldLength(
+            $activities,
+            'window_title',
+            50
+        );
+        $context['activities_app_name_bytes_max'] = $this->maxStringFieldLength(
+            $activities,
+            'app_name',
+            50
+        );
+
+        return $context;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function activitySamplesPayloadContext(Request $request): array
+    {
+        $samples = $request->input('samples');
+
+        return [
+            'time_entry_id' => $request->input('time_entry_id'),
+            'samples_count' => is_array($samples) ? count($samples) : null,
+        ];
+    }
+
+    /**
+     * @param  array<int, mixed>  $rows
+     */
+    private function maxStringFieldLength(array $rows, string $field, int $scanLimit): ?int
+    {
+        $max = 0;
+        $limit = min($scanLimit, count($rows));
+
+        for ($i = 0; $i < $limit; $i++) {
+            if (! is_array($rows[$i])) {
+                continue;
+            }
+            $value = $rows[$i][$field] ?? null;
+            if (is_string($value)) {
+                $max = max($max, strlen($value));
+            }
+        }
+
+        return $max > 0 ? $max : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $diagnostics
+     */
+    private function logIncomingRequest(Request $request, array $diagnostics): void
+    {
+        $method = $request->method();
+        $path = $request->path();
         $userId = auth()->id() ?? 'anonymous';
-        
-        // Extract organization ID from route parameter
+
         $organization = request()->route('organization');
         $organizationId = null;
         if ($organization) {
-            $organizationId = is_object($organization) && method_exists($organization, 'getKey') 
-                ? $organization->getKey() 
+            $organizationId = is_object($organization) && method_exists($organization, 'getKey')
+                ? $organization->getKey()
                 : (is_string($organization) ? $organization : null);
         }
         $organizationId = $organizationId ?? 'N/A';
 
-        $input = [];
+        $input = $diagnostics;
+
         if ($request->isJson()) {
             $jsonInput = $request->json()->all();
-            // Get size of serialized data
             $jsonSize = strlen(json_encode($jsonInput, JSON_THROW_ON_ERROR));
-            $input = [
-                'content_length_header' => $contentLength,
-                'json_size_bytes' => $jsonSize,
-            ];
+            $input['json_size_bytes'] = $jsonSize;
 
-            // Log large payloads warning
-            if ($jsonSize > 10 * 1024 * 1024) { // 10MB threshold
-                Log::warning('Large JSON payload detected', [
+            if ($jsonSize > 10 * 1024 * 1024) {
+                Log::warning('Large JSON payload detected', array_merge([
                     'endpoint' => "$method $path",
                     'user_id' => $userId,
                     'organization_id' => $organizationId,
                     'size_mb' => round($jsonSize / (1024 * 1024), 2),
                     'size_bytes' => $jsonSize,
-                    'has_data_field' => isset($jsonInput['data']),
-                    'data_field_size_kb' => isset($jsonInput['data']) ? round(strlen($jsonInput['data']) / 1024, 2) : null,
-                ]);
+                ], $this->appActivitiesPayloadContext($request), $this->activitySamplesPayloadContext($request)));
             }
 
-            // Special logging for import endpoint
             if (str_contains($path, 'import')) {
                 Log::info('Import request received', [
                     'endpoint' => "$method $path",
@@ -106,11 +219,23 @@ class LogRequestDetails
                     'import_type' => $jsonInput['type'] ?? 'unknown',
                     'data_size_kb' => isset($jsonInput['data']) ? round(strlen($jsonInput['data']) / 1024, 2) : 0,
                     'data_size_mb' => isset($jsonInput['data']) ? round(strlen($jsonInput['data']) / (1024 * 1024), 2) : 0,
-                    'content_length_header' => $contentLength,
+                    'content_length_header' => $request->header('Content-Length'),
                 ]);
             }
-        } else {
-            $input['content_length_header'] = $contentLength;
+        }
+
+        if (
+            ($method === 'POST' && (str_ends_with($path, 'app-activities') || str_ends_with($path, 'activity-samples')))
+            || (isset($diagnostics['activities_count']) && $diagnostics['activities_count'] > 100)
+            || (isset($diagnostics['samples_count']) && $diagnostics['samples_count'] > 500)
+        ) {
+            Log::info('Activity upload request', [
+                'method' => $method,
+                'path' => $path,
+                'user_id' => $userId,
+                'organization_id' => $organizationId,
+                'diagnostics' => $diagnostics,
+            ]);
         }
 
         Log::info('Incoming request', [
@@ -124,35 +249,36 @@ class LogRequestDetails
         ]);
     }
 
-    private function logOutgoingResponse(Request $request, Response $response, float $duration): void
+    /**
+     * @param  array<string, mixed>  $diagnostics
+     */
+    private function logOutgoingResponse(Request $request, Response $response, float $duration, array $diagnostics): void
     {
         $method = $request->method();
         $path = $request->path();
         $statusCode = $response->getStatusCode();
         $userId = auth()->id() ?? 'anonymous';
 
-        // Log slow requests (>1 second)
         if ($duration > 1000) {
-            Log::warning('Slow request detected', [
+            Log::warning('Slow request detected', array_merge([
                 'endpoint' => "$method $path",
                 'user_id' => $userId,
                 'status_code' => $statusCode,
                 'duration_ms' => round($duration, 2),
-            ]);
+            ], $diagnostics));
         }
 
-        // Log errors
         if ($statusCode >= 400) {
-            $context = [
+            $context = array_merge([
                 'method' => $method,
                 'path' => $path,
                 'user_id' => $userId,
                 'status_code' => $statusCode,
                 'duration_ms' => round($duration, 2),
-            ];
+            ], $diagnostics);
 
             if ($statusCode === 422 && $this->isActivityUploadPath($method, $path)) {
-                $context = array_merge($context, $this->activityUploadFailureContext($request, $response));
+                $context['response_message'] = $this->extractResponseMessage($response);
             }
 
             Log::error('Request failed', $context);
@@ -174,29 +300,6 @@ class LogRequestDetails
         }
 
         return str_ends_with($path, 'app-activities') || str_ends_with($path, 'activity-samples');
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function activityUploadFailureContext(Request $request, Response $response): array
-    {
-        $path = $request->path();
-        $context = [
-            'response_message' => $this->extractResponseMessage($response),
-        ];
-
-        if (str_ends_with($path, 'app-activities')) {
-            $activities = $request->input('activities');
-            $context['activities_count'] = is_array($activities) ? count($activities) : null;
-        }
-
-        if (str_ends_with($path, 'activity-samples')) {
-            $samples = $request->input('samples');
-            $context['samples_count'] = is_array($samples) ? count($samples) : null;
-        }
-
-        return $context;
     }
 
     private function extractResponseMessage(Response $response): ?string
