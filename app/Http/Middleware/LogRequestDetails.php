@@ -143,13 +143,19 @@ class LogRequestDetails
 
         // Log errors
         if ($statusCode >= 400) {
-            Log::error('Request failed', [
+            $context = [
                 'method' => $method,
                 'path' => $path,
                 'user_id' => $userId,
                 'status_code' => $statusCode,
                 'duration_ms' => round($duration, 2),
-            ]);
+            ];
+
+            if ($statusCode === 422 && $this->isActivityUploadPath($method, $path)) {
+                $context = array_merge($context, $this->activityUploadFailureContext($request, $response));
+            }
+
+            Log::error('Request failed', $context);
         }
 
         Log::debug('Outgoing response', [
@@ -159,5 +165,61 @@ class LogRequestDetails
             'user_id' => $userId,
             'duration_ms' => round($duration, 2),
         ]);
+    }
+
+    private function isActivityUploadPath(string $method, string $path): bool
+    {
+        if ($method !== 'POST') {
+            return false;
+        }
+
+        return str_ends_with($path, 'app-activities') || str_ends_with($path, 'activity-samples');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function activityUploadFailureContext(Request $request, Response $response): array
+    {
+        $path = $request->path();
+        $context = [
+            'response_message' => $this->extractResponseMessage($response),
+        ];
+
+        if (str_ends_with($path, 'app-activities')) {
+            $activities = $request->input('activities');
+            $context['activities_count'] = is_array($activities) ? count($activities) : null;
+        }
+
+        if (str_ends_with($path, 'activity-samples')) {
+            $samples = $request->input('samples');
+            $context['samples_count'] = is_array($samples) ? count($samples) : null;
+        }
+
+        return $context;
+    }
+
+    private function extractResponseMessage(Response $response): ?string
+    {
+        $content = $response->getContent();
+        if (! is_string($content) || $content === '') {
+            return null;
+        }
+
+        try {
+            $decoded = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return null;
+        }
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        if (isset($decoded['message']) && is_string($decoded['message'])) {
+            return $decoded['message'];
+        }
+
+        return null;
     }
 }
