@@ -5,11 +5,37 @@ declare(strict_types=1);
 namespace App\Http\Requests\V1\ActivitySample;
 
 use App\Http\Requests\V1\BaseFormRequest;
+use App\Rules\BulkActivitySamplesRule;
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class ActivitySampleStoreRequest extends BaseFormRequest
 {
     /**
-     * @return array<string, array<int, string|\Illuminate\Contracts\Validation\Rule>>
+     * Reject oversized payloads before the validator expands wildcard rules.
+     */
+    protected function prepareForValidation(): void
+    {
+        $samples = $this->input('samples');
+
+        if (! is_array($samples)) {
+            return;
+        }
+
+        if (count($samples) > BulkActivitySamplesRule::MAX_ITEMS) {
+            throw new HttpResponseException(response()->json([
+                'message' => 'The samples must not have more than '.BulkActivitySamplesRule::MAX_ITEMS.' items.',
+                'errors' => [
+                    'samples' => [
+                        'The samples must not have more than '.BulkActivitySamplesRule::MAX_ITEMS.' items.',
+                    ],
+                ],
+            ], 422));
+        }
+    }
+
+    /**
+     * @return array<string, array<int, string|ValidationRule>>
      */
     public function rules(): array
     {
@@ -22,25 +48,7 @@ class ActivitySampleStoreRequest extends BaseFormRequest
             'samples' => [
                 'required',
                 'array',
-                'min:1',
-                'max:1000',
-            ],
-            'samples.*.timestamp' => [
-                'bail',
-                'required',
-                'date',
-            ],
-            'samples.*.keystrokes' => [
-                'bail',
-                'required',
-                'integer',
-                'min:0',
-            ],
-            'samples.*.mouse_clicks' => [
-                'bail',
-                'required',
-                'integer',
-                'min:0',
+                new BulkActivitySamplesRule,
             ],
         ];
     }

@@ -90,6 +90,32 @@ class AppActivityEndpointTest extends ApiEndpointTestAbstract
         $response->assertStatus(422);
     }
 
+    public function test_store_rejects_more_than_max_activities(): void
+    {
+        $this->mockMonitorTier();
+        $data = $this->createUserWithPermission(['app-activities:upload']);
+        $data->organization->activity_tracking_enabled = true;
+        $data->organization->app_activity_sync_enabled = true;
+        $data->organization->save();
+        $timeEntry = TimeEntry::factory()->forMember($data->member)->forOrganization($data->organization)->create();
+        Passport::actingAs($data->user);
+
+        $activities = array_fill(0, 301, [
+            'timestamp' => now()->toIso8601ZuluString(),
+            'app_name' => 'Chrome',
+            'window_title' => 'Test',
+            'duration_seconds' => 60,
+        ]);
+
+        $response = $this->postJson(route('api.v1.app-activities.store', [$data->organization->getKey()]), [
+            'time_entry_id' => $timeEntry->getKey(),
+            'activities' => $activities,
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['activities']);
+    }
+
     public function test_store_creates_activities(): void
     {
         $this->mockMonitorTier();

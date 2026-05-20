@@ -153,6 +153,30 @@ class ActivitySampleEndpointTest extends ApiEndpointTestAbstract
         $response->assertStatus(422);
     }
 
+    public function test_store_rejects_more_than_max_samples(): void
+    {
+        $this->mockMonitorTier();
+        $data = $this->createUserWithPermission(['activity-samples:upload']);
+        $data->organization->activity_tracking_enabled = true;
+        $data->organization->save();
+        $timeEntry = TimeEntry::factory()->forMember($data->member)->forOrganization($data->organization)->create();
+        Passport::actingAs($data->user);
+
+        $samples = array_fill(0, 1001, [
+            'timestamp' => now()->startOfMinute()->toIso8601ZuluString(),
+            'keystrokes' => 10,
+            'mouse_clicks' => 2,
+        ]);
+
+        $response = $this->postJson(route('api.v1.activity-samples.store', [$data->organization->getKey()]), [
+            'time_entry_id' => $timeEntry->getKey(),
+            'samples' => $samples,
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['samples']);
+    }
+
     public function test_store_creates_samples(): void
     {
         $this->mockMonitorTier();
