@@ -23,6 +23,23 @@ class LogRequestDetails
         // Log incoming request
         $this->logIncomingRequest($request);
 
+        // Register shutdown handler to catch fatal errors with request context
+        register_shutdown_function(function () use ($request) {
+            $error = error_get_last();
+            if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+                Log::error('Fatal error during request', [
+                    'method' => $request->method(),
+                    'path' => $request->path(),
+                    'user_id' => auth()->id() ?? 'anonymous',
+                    'organization_id' => request()->route('organization') ?? 'N/A',
+                    'error_type' => $error['type'],
+                    'error_message' => $error['message'],
+                    'error_file' => $error['file'],
+                    'error_line' => $error['line'],
+                ]);
+            }
+        });
+
         $response = $next($request);
 
         // Log response and timing
@@ -79,7 +96,7 @@ class LogRequestDetails
             $input['content_length_header'] = $contentLength;
         }
 
-        Log::debug('Incoming request', [
+        Log::info('Incoming request', [
             'method' => $method,
             'path' => $path,
             'user_id' => $userId,
